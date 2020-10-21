@@ -1,0 +1,57 @@
+<!DOCTYPE html><html><head>
+ <meta charset="UTF-8">
+  <meta name="viewport" content="user-scalable=no,initial-scale=1.0,width=device-width">
+<style>
+html,body{height:100%;margin:0;width:100%;}
+#window{
+  height:50%;
+  background-color:#020;
+  width:100%;
+  font-family:monospace;
+  font-size:16px;
+  color:#fff;
+  word-break:break-all;
+  overflow:scroll;
+}
+#console{
+ height:50%;
+ display:flex;
+}
+#debug{
+  width:50%;
+  overflow:scroll;
+}
+#code{
+  width:50%;
+}
+</style>
+<script src="diva.js"></script>
+</head><body>
+<div id="window" onclick="run()">Diva console</div>
+<div id="console">
+<div id="debug"></div>
+<textarea id="code">def add(int a,int b){
+  return a+b;
+}
+def square(int a)
+  return a*a;
+print(add(8,9));
+print(square 7);
+</textarea>
+</div>
+<script>
+function run(){
+var code=document.getElementById('code').value;
+var diva =new Diva(code,document.getElementById('window'));
+try{
+  document.getElementById('window').innerText+="\n>>>"
+  var t=diva.run();
+}catch(e){
+  document.getElementById('window').innerText+=e+"\n";
+}finally{
+  document.getElementById('debug').innerText=JSON.stringify(diva.memory,null,3);
+  document.getElementById('window').innerText+="["+t+"]\n";
+}
+}
+</script>
+</body></html>
