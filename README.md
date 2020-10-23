@@ -25,6 +25,10 @@ struct o={
 o.p;#"property"
 
 int i2=6.5;#6(強制型変換)
+if(true)print 0;
+else if(false){print 1;}
+
+while(i++<10)print i;
 
 print s;#引数が1トークンの場合は()は省略可能
 print(s*2);
