@@ -17,17 +17,21 @@ time;//null
 ```Python
 int i=6;
 float a=3.287;
-complex c=3+2*I;//複素数
-string s="hoge";
+complex c=3+2*I;#複素数
+string s="hoge";# " か '
+struct o={
+　 p:"property"
+};
+o.p;#"property"
 
-int i2=6.5;//6(強制型変換)
+int i2=6.5;#6(強制型変換)
 
-print s;//引数が1トークンの場合は()は省略可能
+print s;#引数が1トークンの場合は()は省略可能
 print(s*2);
 
-def add(int a,b){//引数には型を指定できる
+def add(int a,b){#引数には型を指定できる
   return a+b;
 }
 def float:abs(a)return sqrt(a**2);
-//戻り値の型を指定可能
+#戻り値の型を指定可能
 ```
