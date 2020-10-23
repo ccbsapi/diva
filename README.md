@@ -8,7 +8,7 @@ var time=diva.run();
 diva.stdout;//出力
 diva.stderr;//エラー
 time[0];//パース時間(ms)
-time[1];//パース時間(ms)
+time[1];//実行時間(ms)
 /*但し、エラー時は*/
 time;//null
 ```
