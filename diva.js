@@ -1,6 +1,5 @@
-var Diva=function(code,output){
+var Diva=function(code){
   this.code=code.toString();
-  output=output||{};
   this.stdout="";
   this.stderr="";
   this.memory={
