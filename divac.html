@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html>
+
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=400,user-scalable=no">
+   <title>Diva console</title>
+  <style>
+    html,body{
+      margin:0;
+      height:100%;
+      font-size:20px;
+    }
+    #main{
+      display:flex;
+      height:100%;
+      width:100%;
+      flex-direction:column;
+    }
+    #main:fullscreen{
+      height:100vh;
+    }
+    
+    #editor{
+      flex:1;
+      width:100%;
+    }
+    
+    #out-btn{
+      width:0;
+      height:0;
+    }
+    
+    #out-btn::before{
+      content:'▲';
+      display:block;
+      width:60px;
+      height:40px;
+      line-height:40px;
+      text-align:center;
+      font-size:40px;
+      background-color:#8f8;
+      position:relative;
+      z-index:500;
+      bottom:50px;
+      left:10px;
+      border-radius:10px;
+    }
+    
+    #check:checked + #out-btn::before{
+      content:'▼';
+    }
+    
+    #output-container{
+      background-color:#aaa;
+      height:46px;
+      overflow:hidden;
+      transition-duration: 0.5s;
+      display:flex;
+      flex-direction:column;
+      position:relative;
+    }
+    
+    #check:checked ~ #output-container{
+      height:40%;
+    }
+    #check:checked ~ .tab_content{
+      background-color:#000;
+    }
+    
+    #out-menu{
+      height:46px;
+      overflow-x:scroll;
+      white-space:nowrap;
+    }
+    
+    #out-menu  div{
+      display:inline-block;
+      background-color:#fff;
+      padding:5px;
+      height:30px;
+      line-height:30px;
+      font-size:20px;
+      border-radius:5px;
+      margin:3px;
+      box-shadow:3px 2px 3px #888;
+    }
+    #out-menu div,.tab_item{
+      user-select: none; /* CSS3 */
+      -moz-user-select: none; /* Firefox */
+      -webkit-user-select: none; /* Safari、Chromeなど */
+      -ms-user-select: none; /* IE10かららしい */
+      
+    }
+    
+    .triangle{
+      transform:rotate(90deg);
+      -webkit-transform:rotate(90deg);
+      display:inline-block;
+    }
+    
+    /*タブ*/
+    /*タブ切り替え全体のスタイル*/
+    .tabs {
+    background-color: #fff;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    width: 100%;
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+    }
+    
+    /*タブのスタイル*/
+    .tab_item {
+    width:30%;
+    height: 33px;
+    border-bottom: 3px solid #5ab4bd;
+    border-right:1px solid #aaa;
+    border-left:1px solid #aaa;
+    box-sizing:border-box;
+    background-color: #d9d9d9;
+    line-height: 30px;
+    font-size: 16px;
+    text-align: center;
+    color: #565656;
+    display: block;
+    float: left;
+    font-weight: bold;
+    transition: all 0.2s ease;
+    }
+    
+    #tab_item-1{width:40%;}
+    /*.tab_item:hover {
+    opacity: 0.75;
+    }*/
+    
+    /*ラジオボタンを全て消す*/
+    input[name="tab_item"] {
+    display: none;
+    }
+    
+    /*タブ切り替えの中身のスタイル*/
+    .tab_content{
+    display:none;
+    flex:1;
+    width:100%;
+    background-color:#fff;
+    resize:none;
+    }
+    #tab-col{
+      width:calc(40% - 30px);
+      height:0px;position:relative;box-shadow:0 -18.5px 0px 15px rgba(0,0,255,0.3);left:15px;
+    }
+    
+    /*選択されているタブのコンテンツのみを表示*/
+    #tab-stdout:checked ~ #stdout,
+    #tab-stderr:checked ~ #stderr,
+    #tab-stdin:checked ~ #stdin {
+    display: block;
+    }
+    #tab-stderr:checked ~#tab-col{
+      width:calc(30% - 30px);
+      left:calc(40% + 15px);
+    }
+    #tab-stdin:checked ~#tab-col{
+      width:calc(30% - 30px);
+      left:calc(70% + 15px);
+    }
+    
+    /*Editor*/
+    #ace_settingsmenu{
+      max-width:75%!important;
+    }
+    
+  </style>
+  <script src="diva.js"></script>
+<body>
+ <div id="main">
+   <div id="editor"></div>
+   <input type="checkbox" id="check" style="display:none;">
+   <label for="check" id="out-btn"></label>
+   <div id="output-container">
+     <div id="out-menu">
+       <div onclick="run();"><span class="triangle">▲</span>実行</div>
+       <div onclick="save()">Save</div>
+       <div onclick="editor.execCommand('undo')">Undo</div>
+       <div onclick="editor.execCommand('redo')">Redo</div>
+       <div onclick="(window.navigator&&window.navigator.clipboard).readText().then(function(e){editor.execCommand('paste',e)});">ペースト</div>
+       <div onclick="copy();">コピー</div>
+       <div onclick="editor.execCommand('cut')">カット</div>
+       <div onclick="editor.execCommand('selectall')">全選択</div>
+       <div onclick="editor.execCommand('autoindent')">整形</div>
+       <div onclick="document.getElementById('main').requestFullscreen();">全画面化</div>
+       <div><label>Import<input type="file" onchange="loadFile(this)" style="display:none;"></label></div>
+       <div onclick="file_export()">Export</div>
+     </div>
+     <div class="tabs">
+       <div style="overflow:hidden;">
+         <label class="tab_item" for="tab-stdout" id="tab_item-1">出力</label>
+         <label class="tab_item" for="tab-stderr" id="tab_item-2">エラー</label>
+         <label class="tab_item" for="tab-stdin">入力</label>
+       </div>
+       <input id="tab-stdout" type="radio" name="tab_item" checked>
+       <input id="tab-stderr" type="radio" name="tab_item">
+       <input id="tab-stdin" type="radio" name="tab_item">
+       <div id="tab-col"></div>
+       <textarea class="tab_content" id="stdout" readonly></textarea>
+       <textarea class="tab_content" id="stderr" readonly></textarea>
+       <textarea class="tab_content" id="stdin"></textarea>
+     </div>
+ </div>
+ <script src="ace/ace.js"></script>
+ <script>
+var lang="python";
+var code=localStorage.code||(
+     "def root(float x){\n  int i=0;\n  int max=100;\n  float a=x;\n  while(i++<max){\n    a-=(a*a-x)/(2*x);\n  }\n  return a;\n}"
+  +"\ndef cube_root(float x){\n  int i=0;\n  int max=900;\n  float a=x;\n  while(i++<max){\n    a-=(a*a*a-x)/(3*x*x);\n  }\n  return a;\n}"
+  +"\nfloat root5=root 5;"
+  +"\nprint(root5,root5*root5);"
+  +"\nprint(cube_root 10);"
+);
+var editor = ace.edit("editor");
+editor.$blockScrolling = Infinity;
+editor.setTheme("ace/theme/monokai");
+editor.getSession().setMode("ace/mode/"+lang);
+editor.session.setValue(code);
+editor.setFontSize(15);
+
+var stdout=document.getElementById('stdout')
+var stderr=document.getElementById('stderr')
+
+function copy(){
+    var e=window.navigator&&window.navigator.clipboard;
+    var copyText=editor.getCopyText();
+    if(!copyText){
+        alert("コピー内容が空です");
+    }
+    e?e.writeText(editor.getCopyText()):document.execCommand("copy");
+    editor.execCommand("copy");
+}
+
+function loadFile(e){
+    var reader = new FileReader()
+    reader.readAsText(e.files[0]);
+    reader.onload = function() {
+        editor.setValue(reader.result);
+    }
+}
+
+function save(){
+  localStorage.code=editor.session.getValue();
+  alert("ローカルストレージに保存しました。");
+}
+
+function file_export() {
+
+    // テキストエリアから入力内容を取得する
+    var content = editor.getValue();;
+
+    // テキストファイルをBlob形式に変換する
+    var blob = new Blob([content]);
+
+    // Blobデータに対するURLを発行する
+    var blobURL = window.URL.createObjectURL(blob);
+
+    // URLをaタグに設定する
+    var a = document.createElement('a');
+    a.href = blobURL;
+
+    // download属性でダウンロード時のファイル名を指定
+      var filename=prompt("ファイル名を入力してください。");
+      if(typeof filename!="string")return;
+      a.download=filename;
+    // Firefoxの場合は、実際にDOMに追加しておく必要がある
+    document.body.appendChild(a);
+
+    // CLickしてダウンロード
+    a.click();
+
+    // 終わったら不要なので要素を削除
+    a.parentNode.removeChild(a);
+}
+
+
+
+function run(){
+    var time=null;
+    var err=false;
+    stdout.value="";
+    stderr.value="";
+    var terr=document.getElementById('tab_item-2');
+    terr.style.backgroundColor="#d9d9d9";
+    try{
+        var diva=new Diva(editor.session.getValue(),{stdout:stdout,stderr:stderr});
+        time=diva.run();
+        stdout.value+=diva.stdout;
+    }catch(e){
+        err=e.toString();
+        stderr.value+=diva.stderr;
+        terr.style.backgroundColor="#ff6666";
+    }finally{
+        stdout.value+="\n\n"+(time?
+                          "...<<正常終了>>\nパース:"+time[0]+"ms\n実行:"+time[1]+"ms":
+                          "...<<異常終了>>\n"+err);
+        
+    }
+}
+
+
+</script>
+</body>
+</html>

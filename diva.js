@@ -1,27 +1,57 @@
 var Diva=function(code,output){
   this.code=code.toString();
-  this.output=(output instanceof Element)?output:document.body;
+  output=output||{};
+  this.stdout="";
+  this.stderr="";
   this.memory={
     vars:
       {
-        NaN:{type:'int',value:'0'}
-        ,null:{type:'null'}
+         null:{type:'null'}
         ,'true':{type:'boolean',value:true}
         ,'false':{type:'boolean',value:false}
+        ,NaN:{type:'int',value:NaN}
+        ,Infinity:{type:'int',value:1/0}
+        ,PI:{type:'float',value:Math.PI}
+        ,E:{type:'float',value:Math.E}
+        ,I:{type:'complex',value:[0,1]}
+        
+        
         ,'if':{type:'func',value:{rtype:"boolean",'native':true,func:function(args){var v=args[args.length-1];return v;}}}
         ,'alert':{type:'func',value:{rtype:"null",'native':true,func:function(args,_this){alert(args.map(function(i){return _this.toStr(i)}));}}}
         ,'print':{type:'func',value:{rtype:"null",'native':true,func:function(args,_this){
             args.forEach(function(v){
-              _this.output.innerText+=_this.toStr(v)+"\n";
+              _this.stdout+=_this.toStr(v)+"\n";
             });}}
         }
-        ,'log':{type:'func',value:{rtype:"null",'native':true,func:function(args,_this){
-          args.forEach(function(v){
-            console.log(_this.toStr(v));
-          });}}
+        ,'typeof':{type:'func',value:{rtype:"string",'native':true,func:function(args){return {type:"string",value:args[args.length-1].type}}}}
+        
+        ,'log':{type:'func',value:{rtype:"float",'native':true,func:function(args,_this){
+            var a=_this.forceType(args[0]||{},"float");
+            return {type:'float',value:Math.log(a.value)};
+          }}
         }
-        ,obj:{type:'struct',value:{prop:{type:'int',value:4649}}}
-        ,f:{type:"func",value:{native:true}}
+        ,'sin':{type:'func',value:{rtype:"float",'native':true,func:function(args,_this){
+            var a=_this.forceType(args[0]||{},"float");
+            return {type:'float',value:Math.sin(a.value)};
+          }}
+        }
+        ,'cos':{type:'func',value:{rtype:"float",'native':true,func:function(args,_this){
+            var a=_this.forceType(args[0]||{},"float");
+            return {type:'float',value:Math.cos(a.value)};
+          }}
+        }
+        ,'tan':{type:'func',value:{rtype:"float",'native':true,func:function(args,_this){
+            var a=_this.forceType(args[0]||{},"float");
+            return {type:'float',value:Math.tan(a.value)};
+          }}
+        }
+        ,'sqrt':{type:'func',value:{rtype:"float",'native':true,func:function(args,_this){
+            var a=_this.forceType(args[0]||{},"float");
+            return {type:'float',value:Math.sqrt(a.value)};
+          }}
+        }
+        
+        
         ,'int':{
           type:'class',
           name:'int',
@@ -31,8 +61,7 @@ var Diva=function(code,output){
               return (args[0]&&_this.forceType(args[0],'int'))||0;
             }},
             props:{
-              'val':{type:'int',value:100,const:1}
-              ,log:{type:'func',value:{native:true,func:function(args,_this,scope,self){
+              log:{type:'func',value:{native:true,func:function(args,_this,scope,self){
                 var data=self.data||{};
                 var th=data.this;
                 var x=1;
@@ -42,9 +71,7 @@ var Diva=function(code,output){
                   ,value:args[0]?Math.log(th.value)/Math.log(args[0].value):Math.log(th.value)}
               }}}
             },
-            statics:{
-              'v':{type:'int',value:10,const:1}
-            },
+            statics:{},
             toStr:{
                type:'func'
               ,value:{native:true
@@ -61,6 +88,27 @@ var Diva=function(code,output){
             'implements':[],
             constructor:{native:true,func:function(args,_this,scope,ops){
               return (args[0]&&_this.forceType(args[0],'float'))||0;
+            }},
+            props:{
+              'val':{type:'int',value:100}
+            },
+            statics:{
+              'v':{type:'int',value:1000}
+            },
+            toStr:function(val){
+              val.toString();
+            }
+          }
+        },
+        'complex':{
+          type:'class',
+          name:'complex',
+         // const:1,
+          value:{
+            'extends':null,
+            'implements':[],
+            constructor:{native:true,func:function(args,_this,scope,ops){
+              return (args[0]&&_this.forceType(args[0],'complex'))||[0,0];
             }},
             props:{
               'val':{type:'int',value:100}
@@ -213,7 +261,7 @@ var Diva=function(code,output){
               a.type=b.type;
               a.value=b.value;
             }else{
-              a.value=_this.forceType(b,a.type);
+              a.value=_this.forceType(b,a.type).value;
             }
             return a;
           }
@@ -274,7 +322,7 @@ var Diva=function(code,output){
             
             var a=args[0],b=args[1];
             
-            if(a.type!="func")_this.throw("TypeError",a.name+"is not a function");
+            if(a.type!="func")_this.throw("TypeError",a.name+" is not a function");
             return _this.runFunc(a.value,b,scope);
           }
         }
@@ -314,6 +362,30 @@ var Diva=function(code,output){
         }
       },
       {
+        "**":{
+          type:2,
+          'native':true,
+          func:this.operateFunction,
+          'fs':{
+            '[consider]':{
+              null:{native:true,func:function(){return {type:'int',value:0}}}
+            }
+            ,'[others]':{native:true,func:function(){}}
+            ,'int':{
+               'int':{native:true,func:function(args){return {type:'int',value:Math.pow(args[0],args[1])}}}
+              ,'float':{native:true,func:function(args){return {type:'float',value:Math.pow(args[0],args[1])}}}
+            }
+            ,'float':{
+              'int':{native:true,func:function(args){return {type:'float',value:Math.pow(args[0],args[1])}}}
+              ,'float':{native:true,func:function(args){return {type:'float',value:Math.pow(args[0],args[1])}}}
+            }
+            ,'string':{
+              'int':{native:true,func:function(args){return {type:'string',value:Math.pow(args[0],args[1])}}}
+            }
+          }
+        }
+      },
+      {
         "*":{
           type:2,
           'native':true,
@@ -326,10 +398,23 @@ var Diva=function(code,output){
             ,'int':{
                'int':{native:true,func:function(args){return {type:'int',value:args[0]*args[1]}}}
               ,'float':{native:true,func:function(args){return {type:'float',value:args[0]*args[1]}}}
+              ,'complex':{native:true,func:function(args){return {type:'complex',value:[args[1][0]*args[0],args[1][1]*args[0]]}}}
             }
             ,'float':{
               'int':{native:true,func:function(args){return {type:'float',value:args[0]*args[1]}}}
               ,'float':{native:true,func:function(args){return {type:'float',value:args[0]*args[1]}}}
+              ,'complex':{native:true,func:function(args){return {type:'complex',value:[args[1][0]*args[0],args[1][1]*args[0]]}}}
+            }
+            ,'complex':{
+              'int':{native:true,func:function(args){return {type:'complex',value:[args[0][0]*args[1],args[0][1]*args[1]]}}}
+              ,'float':{native:true,func:function(args){return {type:'complex',value:[args[0][0]*args[1],args[0][1]*args[1]]}}}
+              ,'complex':{native:true,func:function(args){
+                var a=args[0][0];
+                var b=args[0][1];
+                var c=args[1][0];
+                var d=args[1][1];
+                return {type:'complex',value:[a*c-b*d,a*d+b*c]}
+              }}
             }
             ,'string':{
               'int':{native:true,func:function(args){return {type:'string',value:(function(i){var rs="";while(i-->0){rs+=args[0]}return rs})(args[1])}}}
@@ -355,6 +440,17 @@ var Diva=function(code,output){
             }
             ,'string':{
               'int':{native:true,func:function(args){return {type:'string',value:(function(i){var rs="";while(i-->0){rs+=args[0]}return rs})(args[1])}}}
+            }
+            ,'complex':{
+               'int':{native:true,func:function(args){return {type:'complex',value:[args[0][0]/args[1],args[0][1]/args[1]]}}}
+               ,'float':{native:true,func:function(args){return {type:'complex',value:[args[0][0]/args[1],args[0][1]/args[1]]}}}
+               ,'complex':{native:true,func:function(args){
+                var a=args[0][0];
+                var b=args[0][1];
+                var c=args[1][0];
+                var d=args[1][1];
+                return {type:'complex',value:[(a*c+b*d)/(c*c+d*d),(b*c-a*d)/(c*c+d*d)]}
+              }}
             }
           }
         }
@@ -398,19 +494,30 @@ var Diva=function(code,output){
             ,'[none]':{
               'int':{native:true,func:function(args){return {type:'int',value:args[1]}}}
               ,'float':{native:true,func:function(args){return {type:'float',value:args[1]}}}
+              ,'complex':{native:true,func:function(args){return {type:'complex',value:args[1]}}}
             }
             ,'int':{
                'int':{native:true,func:function(args){return {type:'int',value:args[0]+args[1]}}}
               ,'float':{native:true,func:function(args){return {type:'float',value:args[0]+args[1]}}}
+              ,'complex':{native:true,func:function(args){return {type:'complex',value:[args[0]+args[1][0],args[1][1]]}}}
               ,'string':{native:true,func:function(args){return {type:'string',value:args[0]+args[1]}}}
             }
             ,'float':{
               'int':{native:true,func:function(args){return {type:'float',value:args[0]+args[1]}}}
               ,'float':{native:true,func:function(args){return {type:'float',value:args[0]+args[1]}}}
+              ,'complex':{native:true,func:function(args){return {type:'complex',value:[args[0]+args[1][0],args[1][1]]}}}
+              ,'string':{native:true,func:function(args){return {type:'string',value:args[0]+args[1]}}}
+            }
+            ,'complex':{
+              'int':{native:true,func:function(args){return {type:'complex',value:[args[0][0]+args[1],args[0][1]]}}}
+              ,'float':{native:true,func:function(args){return {type:'complex',value:[args[0][0]+args[1],args[0][1]]}}}
+              ,'complex':{native:true,func:function(args){return {type:'complex',value:[args[0][0]+args[1][0],args[0][1]+args[1][1]]}}}
+              ,'string':{native:true,func:function(args,_this){return {type:'string',value:_this.toStr({type:'complex',value:args[0]})+args[1]}}}
             }
             ,'string':{
               'int':{native:true,func:function(args){return {type:'string',value:args[0]+args[1]}}}
               ,'float':{native:true,func:function(args){return {type:'string',value:args[0]+args[1]}}}
+              ,'complex':{native:true,func:function(args,_this){return {type:'string',value:args[0]+_this.toStr({type:'complex',value:args[1]})}}}
               ,'string':{native:true,func:function(args){return {type:'string',value:args[0]+args[1]}}}
             }
           }
@@ -427,15 +534,22 @@ var Diva=function(code,output){
             ,'[none]':{
               'int':{native:true,func:function(args){return {type:'int',value:-args[1]}}}
               ,'float':{native:true,func:function(args){return {type:'float',value:-args[1]}}}
+              ,'complex':{native:true,func:function(args){return {type:'complex',value:[-args[1][0],-args[1][1]]}}}
             }
             ,'int':{
                'int':{native:true,func:function(args){return {type:'int',value:args[0]-args[1]}}}
               ,'float':{native:true,func:function(args){return {type:'float',value:args[0]-args[1]}}}
-              ,'string':{native:true,func:function(args){return {type:'string',value:args[0]-args[1]}}}
+              ,'complex':{native:true,func:function(args){return {type:'complex',value:[args[0]-args[1][0],-args[1][1]]}}}
             }
             ,'float':{
               'int':{native:true,func:function(args){return {type:'float',value:args[0]-args[1]}}}
               ,'float':{native:true,func:function(args){return {type:'float',value:args[0]-args[1]}}}
+              ,'complex':{native:true,func:function(args){return {type:'complex',value:[args[0]-args[1][0],-args[1][1]]}}}
+            }
+            ,'complex':{
+              'int':{native:true,func:function(args){return {type:'complex',value:[args[0][0]-args[1],args[0][1]]}}}
+              ,'float':{native:true,func:function(args){return {type:'complex',value:[args[0][0]-args[1],args[0][1]]}}}
+              ,'complex':{native:true,func:function(args){return {type:'complex',value:[args[0][0]-args[1][0],args[0][1]-args[1][1]]}}}
             }
             ,'string':{
               'int':{native:true,func:function(args){return {type:'string',value:args[0]-args[1]}}}
@@ -464,6 +578,7 @@ var Diva=function(code,output){
               'int':{native:true,func:function(args){return {type:'boolean',value:args[0]==args[1]}}}
               ,'float':{native:true,func:function(args){return {type:'boolean',value:args[0]==args[1]}}}
             }
+            
           }
         }
         ,"<":{
@@ -540,6 +655,12 @@ var Diva=function(code,output){
         var type=args[0].type;
         if(['int','float','string','boolean','null'].indexOf(type)+1){
           return type=='null'?'null':(args[0].value.toString());
+        }else if(type=="complex"){
+          var val=args[0].value;
+          return ((val[0]||"")+(val[1]?(
+            val[0]?(val[1]==1?"":val[1]==-1?"-":(val[1]>0?"+":"")+val[1])
+                  :(val[1]==1?"":val[1]==-1?"-":val[1])
+          )+"i":""))||"0";
         }else{
           return '[Object '+type+']';
         }
@@ -547,13 +668,21 @@ var Diva=function(code,output){
     }
     ,null:{
       int:{native:true,func:function(args){return 0;}}
+      ,float:{native:true,func:function(args){return 0;}}
+      ,complex:{native:true,func:function(args){return [0,0];}}
     }
     ,int:{
       float:{native:true,func:function(args){return args[0].value}}
+      ,complex:{native:true,func:function(args){return [args[0].value,0]}}
       ,string:{native:true,func:function(args){return args[0].value.toString()}}
     }
     ,float:{
       int:{native:true,func:function(args){return parseInt(args[0].value)}}
+      ,complex:{native:true,func:function(args){return [args[0].value,0]}}
+      ,string:{native:true,func:function(args){return args[0].value.toString()}}
+    }
+    ,complex:{
+      float:{native:true,func:function(args){return args[0].value[0]}}
     }
   };
 };
@@ -703,14 +832,7 @@ Diva.prototype={
   ,toStr:function(obj){
     var value=obj.value;
     var type=obj.type;
-    if(type=="null"||typeof value=="undefined"){
-      return "null"
-    };
-    if(type=="int"||type=="float"||type=="string"||type=="boolean"||type=="func"){
-      return value.toString();
-    }else{
-      return "[Object "+type+"]";
-    }
+    return _this.forceType(obj,"string").value;
   }
   ,parseStr:function(str,type){
     var rt="";
@@ -744,7 +866,9 @@ Diva.prototype={
           _this.getVar(ar.name,nscope).value=argv.value;
         }
       }
-      return _this.process(func.code,nscope)||{type:"null"};
+     var returnedValue=_this.process(func.code,nscope)||{type:"null"};
+     if(func.rtype)returnedValue=this.forceType(returnedValue,func.rtype);
+     return returnedValue;
     }
   }
   
@@ -845,7 +969,9 @@ Diva.prototype={
   var tr=[];
   var last=[];
   var blockn=0;
+  var defdata={};
   code.forEach(function(v,i){
+    if(!v)return;
     if(Array.isArray(v)){
      if(!Statement.length){//文頭の時
        if(v[0]=="{"){
@@ -878,6 +1004,12 @@ Diva.prototype={
       }
       if(v=="def"){
         syntax=v;
+        if(code[i+2]==":"){
+          defdata.rtype=code[i+1];
+          code[i+1]="";
+          code[i+2]="def";
+          return;
+        }
         if(Array.isArray(code[i+3])&&code[i+3][0]=="{"){
           var name=code[i+1];
           var args=code[i+2];
@@ -886,10 +1018,11 @@ Diva.prototype={
           _this.getVar(name,scope).value={
             native:false,
             name:name,
-            args:_this.parseArgs(args[1]),
+            rtype:defdata.rtype,
+            args:_this.parseArgs(args[1],scope),
             code:parts
           };
-          Statement=[];syntax='';code[i+1]='';code[i+2]='';code[i+3]='';
+          Statement=[];defdata={};syntax='';code[i+1]='';code[i+2]='';code[i+3]='';
         }
         return;
       }
@@ -924,10 +1057,11 @@ Diva.prototype={
         _this.getVar(name,scope).value={
           native:false,
           name:name,
-          args:_this.parseArgs(args[1]),
+          rtype:defdata.rtype,
+          args:_this.parseArgs(args[1],scope),
           code:parts
         };
-        syntax='';
+        syntax='';defdata={};
       }else
       if(syntax=="else"){
         last.push([[';',_this.parseExpression(Statement,scope)]]);
@@ -1119,9 +1253,9 @@ Diva.prototype={
 
 
 
-,parseArgs:function(args){
+,parseArgs:function(args,scope){
   var _this=this;
-  var classList=['int'];
+  var classList=_this.getClassList(scope);;
   var argarr=[];//returnする配列　
   var vinfo={};
   for(var i=0;i<args.length;i++){
@@ -1278,6 +1412,8 @@ Diva.prototype={
 }
 
 ,'throw':function(errtype,errtxt){
-  throw("Diva:"+errtype+':'+errtxt);
+  var errstr=errtype+':'+errtxt;
+  this.stderr+="Diva:"+errstr+"\n";
+  throw errstr;
 }
 };
