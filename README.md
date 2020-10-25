@@ -15,7 +15,7 @@ time;//null
 # 文法
 文末にセミコロン必須。関数、ブロックスコープ。
 コメントは<code>#</code>から改行若しくは<code>#</code>まで。
-<code>\</code>を前に置くと改行or<code>#</code>判定を避けられる。
+<code>\\</code>を前に置くと改行or<code>#</code>判定を避けられる。
 ```Python
 int i=6;
 float a=3.287;
