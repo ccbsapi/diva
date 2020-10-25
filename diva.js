@@ -518,6 +518,7 @@ var Diva=function(code){
               ,'float':{native:true,func:function(args){return {type:'string',value:args[0]+args[1]}}}
               ,'complex':{native:true,func:function(args,_this){return {type:'string',value:args[0]+_this.toStr({type:'complex',value:args[1]})}}}
               ,'string':{native:true,func:function(args){return {type:'string',value:args[0]+args[1]}}}
+              ,'boolean':{native:true,func:function(args){return {type:'string',value:args[0]+args[1]}}}
             }
           }
         },
@@ -723,17 +724,22 @@ Diva.prototype={
             }else
             if(ifv=="if"){els=false;continue;}
             else if(els){
-              self(v[ifn],scope,_this);
+              var rv=self(v[ifn],scope,_this);
+              if(rv)return rv;
               break;
             }
             if(_this.isTrue(_this.exec(ifv,scope))){
-              self(v[ifn+1],scope,_this);
+              var rv=self(v[ifn+1],scope,_this);
+              if(rv)return rv;
               break;
             }
             ifn++;
           }
         }else if(vf=="while"){
-          while(_this.isTrue(_this.exec(v[1],scope)))self(v[2],scope,_this);
+          while(_this.isTrue(_this.exec(v[1],scope))){
+            var rv=self(v[2],scope,_this);
+            if(rv)return rv;
+          }
         }else if(vf=="block"){
           var sc=_this.getScope(scope);
           var blockn=v[1];
@@ -742,9 +748,9 @@ Diva.prototype={
           ars.push(blockn);
           blockn++;
           var rv=self(v[2],ars,_this);
-          if(rv)returnValue=rv;
+          if(rv)return rv;
         }else if(vf=="return"){
-          var rv=_this.exec(v[1],scope);
+          var rv=_this.exec(v[1],scope)||{type:"null"};
           return rv;
         }
       }else{
@@ -925,7 +931,7 @@ Diva.prototype={
         else str[2]=0;
         return;
       }
-      if(v==str[1]&&!str[2]%2){
+      if(v==str[1]&&!str[2]%2){//文字列リテラル終了
         str[0]=false;str[1]='',str[2]=0;
         stack.push(["str",_this.parseStr(chars,v=='"'?2:1)]);
         chars="";
