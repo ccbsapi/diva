@@ -853,10 +853,8 @@ Diva.prototype={
     }else{
       if(func.args.length){
         var nscope=_this.clone(scope);
-        if(func.code[0][0]=="block"){//ブロック関数の場合はスコープを移動
-          nscope.push(func.code[0][1]);
-          _this.getScope(scope)[func.code[0][1]]={};
-        }
+        nscope.push("(f_"+func.name);//関数スコープ作成
+        _this.getScope(scope)[nscope[nscope.length-1]]={};
         for(var ai=0;ai<func.args.length;ai++){
           var argv=args[ai]||{type:"null"};
           var ar=func.args[ai];
@@ -918,14 +916,21 @@ Diva.prototype={
   var operators=this.opeList();
   code.split('').forEach(function(v,i){
     if(str[0]){//文字列の中の時
+      if(str[1]=="#"){
+        if(v=="\n")stack.push(v);
+        if((v=="\n"||v=="#")&&!str[2]%2){
+          chars="";str[0]=false;str[1]='',str[2]=0;
+        }
+        if(v=="\\")str[2]++;
+        else str[2]=0;
+        return;
+      }
       if(v==str[1]&&!str[2]%2){
         str[0]=false;str[1]='',str[2]=0;
         stack.push(["str",_this.parseStr(chars,v=='"'?2:1)]);
         chars="";
         return;
       }
-      if(v=="\\")str[2]++;
-      else str[2]=0;
       chars+=v;
       return;
     }
@@ -935,17 +940,17 @@ Diva.prototype={
       if(v=="\n")stack.push(v);
       chars='';return;
     }
+    if(v=="'"||v=='"'||v=="#"){
+      if(chars)stack.push(chars);
+      str[0]=true;str[1]=v;chars='';
+      return;
+    }
     if(_this.grammar.symbol.indexOf(v)+1){
       if(chars)stack.push(chars);
       if(operators.indexOf(stack[stack.length-1]+v)+1)
         stack[stack.length-1]+=v;
       else stack.push(v);
       chars='';return;
-    }
-    if(v=="'"||v=='"'){
-      if(chars)stack.push(chars);
-      str[0]=true;str[1]=v;chars='';
-      return;
     }
     chars+=v;
   });
