@@ -13,7 +13,9 @@ time[1];//実行時間(ms)
 time;//null
 ```
 # 文法
-文末にセミコロン必須。完全なブロックスコープ
+文末にセミコロン必須。関数、ブロックスコープ。
+コメントは<code>#</code>から改行若しくは<code>#</code>まで。
+<code>\</code>を前に置くと改行or<code>#</code>判定を避けられる。
 ```Python
 int i=6;
 float a=3.287;
@@ -23,6 +25,9 @@ struct o={
 　 p:"property"
 };
 o.p;#"property"
+i++;
+#ここはコメント\
+複数行コメント#
 
 int i2=6.5;#6(強制型変換)
 if true print 0;
