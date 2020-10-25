@@ -71,6 +71,12 @@
       height:46px;
       overflow-x:scroll;
       white-space:nowrap;
+      -ms-overflow-style: none;    /* IE, Edge 対応 */
+      scrollbar-width: none;       /* Firefox 対応 */
+    }
+    
+    #out-menu::-webkit-scrollbar {  /* Chrome, Safari 対応 */
+      display:none;
     }
     
     #out-menu  div{
