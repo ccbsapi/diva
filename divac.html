@@ -173,9 +173,19 @@
       left:calc(70% + 15px);
     }
     
-    /*Editor*/
-    #ace_settingsmenu{
-      max-width:75%!important;
+    
+    #notify{
+      position:absolute;
+      top:0;
+      right:0;
+      z-index:100;
+      font-size:15px;
+      margin:5px;
+      border:3px solid rgba(0,255,0,0.3);
+      border-radius:5px;
+      background-color:rgba(80,255,80,0.8);
+      color:#fff;
+      display:none;
     }
     
   </style>
@@ -215,6 +225,7 @@
        <textarea class="tab_content" id="stdin"></textarea>
      </div>
  </div>
+ <div id="notify"></div>
  <script src="ace/ace.js"></script>
  <script>
 var lang="python";
@@ -255,7 +266,7 @@ function loadFile(e){
 
 function save(){
   localStorage.code=editor.session.getValue();
-  alert("ローカルストレージに保存しました。");
+  notify("ローカルストレージに保存しました。");
 }
 
 function file_export() {
@@ -312,7 +323,13 @@ function run(){
     }
 }
 
-
+function notify(s){
+  var nbox=document.getElementById('notify');
+  nbox.innerText=s;
+  nbox.style.display="block";
+  clearTimeout(window.notifyTimer);
+  window.notifyTimer=setTimeout(function(){nbox.style.display="none";},2000);
+}
 </script>
 </body>
 </html>
