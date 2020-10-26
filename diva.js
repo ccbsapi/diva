@@ -29,19 +29,41 @@ var Diva=function(code){
             return {type:'float',value:Math.log(a.value)};
           }}
         }
-        ,'sin':{type:'func',value:{rtype:"float",'native':true,func:function(args,_this){
-            var a=_this.forceType(args[0]||{},"float");
-            return {type:'float',value:Math.sin(a.value)};
+        ,'sin':{type:'func',value:{'native':true,func:function(args,_this){
+            if(!args[0]||!args[0])return{type:null};
+            if(args[0].type=="float"||args[0].type=="int")
+              return {type:'float',value:Math.sin(args[0].value)};
+            if(args[0].type=="complex"){
+              var a=args[0].value[0];
+              var b=args[0].value[1];
+              return {type:"complex",value:[Math.sin(a)*_this.funcs.cosh(b),Math.cos(a)*_this.funcs.sinh(b)]}
+            }
           }}
         }
-        ,'cos':{type:'func',value:{rtype:"float",'native':true,func:function(args,_this){
-            var a=_this.forceType(args[0]||{},"float");
-            return {type:'float',value:Math.cos(a.value)};
+        ,'cos':{type:'func',value:{'native':true,func:function(args,_this){
+            if(!args[0]||!args[0])return{type:null};
+            if(args[0].type=="float"||args[0].type=="int")
+              return {type:'float',value:Math.cos(args[0].value)};
+            if(args[0].type=="complex"){
+              var a=args[0].value[0];
+              var b=args[0].value[1];
+              return {type:"complex",value:[Math.cos(a)*_this.funcs.cosh(b),-Math.sin(a)*_this.funcs.sinh(b)]}
+            }
           }}
         }
-        ,'tan':{type:'func',value:{rtype:"float",'native':true,func:function(args,_this){
-            var a=_this.forceType(args[0]||{},"float");
-            return {type:'float',value:Math.tan(a.value)};
+        ,'tan':{type:'func',value:{'native':true,func:function(args,_this){
+            if(!args[0]||!args[0])return{type:null};
+            if(args[0].type=="float"||args[0].type=="int")
+              return {type:'float',value:Math.tan(args[0].value)};
+            if(args[0].type=="complex"){
+              var a=args[0].value[0];
+              var b=args[0].value[1];
+              var bb=_this.funcs.cosh(2*b)+Math.cos(2*a); //分母
+              /*
+                tanx=(sin(2a)+isinh(2b))/(cos(2a)+cosh(2b))
+              */
+              return {type:"complex",value:[Math.sin(2*a)/bb,_this.funcs.sinh(2*b)/bb]}
+            }
           }}
         }
         ,'sqrt':{type:'func',value:{rtype:"float",'native':true,func:function(args,_this){
@@ -226,6 +248,16 @@ var Diva=function(code){
     }
     if(typeof result=='object'&&!Array.isArray(result))
       return result;
+  };
+  this.funcs={
+    sinh:function(a){
+      var ea=Math.pow(Math.E,a);
+      return(ea-1/ea)/2;
+    }
+    ,cosh:function(a){
+      var ea=Math.pow(Math.E,a);
+      return(ea+1/ea)/2;
+    }
   };
   this.grammar={
     symbol:['+','-','*','/','%','=','.',',','<','>','?','!',':','{','}','[',']','(',')','#','&','|','^',';','\\',"@",'~'],
