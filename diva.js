@@ -58,7 +58,7 @@ var Diva=function(code){
             if(args[0].type=="complex"){
               var a=args[0].value[0];
               var b=args[0].value[1];
-              var bb=_this.funcs.cosh(2*b)+Math.cos(2*a); //分母
+              var bb=Math.cos(2*a)+_this.funcs.cosh(2*b); //分母
               /*
                 tanx=(sin(2a)+isinh(2b))/(cos(2a)+cosh(2b))
               */
@@ -66,11 +66,36 @@ var Diva=function(code){
             }
           }}
         }
+        
+        ,'sinh':{type:'func',value:{'native':true,func:function(args,_this){
+            if(!args[0]||!args[0])return{type:null};
+            if(args[0].type=="float"||args[0].type=="int")
+              return {type:'float',value:_this.funcs.sinh(args[0].value)};
+            if(args[0].type=="complex"){
+              var a=args[0].value[0];
+              var b=args[0].value[1];
+              return {type:"complex",value:[_this.funcs.sinh(a)*Math.cos(b),_this.funcs.cosh(a)*Math.sin(b)]}
+            }
+          }}
+        }
+        ,'cosh':{type:'func',value:{'native':true,func:function(args,_this){
+            if(!args[0]||!args[0])return{type:null};
+            if(args[0].type=="float"||args[0].type=="int")
+              return {type:'float',value:_this.funcs.cosh(args[0].value)};
+            if(args[0].type=="complex"){
+              var a=args[0].value[0];
+              var b=args[0].value[1];
+              return {type:"complex",value:[_this.funcs.cosh(a)*Math.cos(b),_this.funcs.sinh(a)*Math.sin(b)]}
+            }
+          }}
+        }
+        
         ,'sqrt':{type:'func',value:{rtype:"float",'native':true,func:function(args,_this){
             var a=_this.forceType(args[0]||{},"float");
             return {type:'float',value:Math.sqrt(a.value)};
           }}
         }
+        
         
         
         ,'int':{
@@ -400,18 +425,32 @@ var Diva=function(code){
           'fs':{
             '[consider]':{
               null:{native:true,func:function(){return {type:'int',value:0}}}
+              ,int:{native:true,func:function(v){return {type:'float',value:v}}}
             }
             ,'[others]':{native:true,func:function(){}}
-            ,'int':{
+           /* ,'int':{
                'int':{native:true,func:function(args){return {type:'int',value:Math.pow(args[0],args[1])}}}
               ,'float':{native:true,func:function(args){return {type:'float',value:Math.pow(args[0],args[1])}}}
-            }
+            }*/
             ,'float':{
               'int':{native:true,func:function(args){return {type:'float',value:Math.pow(args[0],args[1])}}}
               ,'float':{native:true,func:function(args){return {type:'float',value:Math.pow(args[0],args[1])}}}
             }
             ,'string':{
               'int':{native:true,func:function(args){return {type:'string',value:Math.pow(args[0],args[1])}}}
+            }
+            ,'complex':{
+              'int':{native:true,func:function(args,_this,scope){
+                var multi=_this.searchOperator('*')[1];
+                var c={type:'complex',value:[1,0]};
+                var a={type:'complex',value:args[0]};
+                var max=args[1];
+                var min=max<0;
+                max=Math.abs(max);
+                for(var i=0;i<max;i++)
+                  c=_this.runFunc(multi,[c,a],scope);//c*=a
+                return min?1/c:c;
+              }}
             }
           }
         }
