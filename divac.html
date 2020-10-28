@@ -230,11 +230,8 @@
  <script>
 var lang="python";
 var code=localStorage.code||(
-     "def root(float x){\n  int i=0;\n  int max=100;\n  float a=x;\n  while(i++<max){\n    a-=(a*a-x)/(2*x);\n  }\n  return a;\n}"
-  +"\ndef cube_root(float x){\n  int i=0;\n  int max=900;\n  float a=x;\n  while(i++<max){\n    a-=(a*a*a-x)/(3*x*x);\n  }\n  return a;\n}"
-  +"\nfloat root5=root 5;"
-  +"\nprint(root5,root5*root5);"
-  +"\nprint(cube_root 10);"
+     "def f(float x)return(x*(atan x+PI/2)+1)/PI;"
+  +"\nplot(f,-5,5,-3,7);"
 );
 var editor = ace.edit("editor");
 editor.$blockScrolling = Infinity;
