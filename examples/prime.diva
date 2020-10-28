@@ -1,0 +1,14 @@
+#素数判定関数
+def boolean:isPrime(int a){
+    if(a<3)return a==2;
+    if(a%2==0)return;
+    int i=1;
+    int max=sqrt a+1;
+    while(i++++<max)
+        if(a%i==0)return;
+    return true;
+}
+
+int i=0;
+while(i++<100)
+    if(isPrime i)print i;

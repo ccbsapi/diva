@@ -1,0 +1,13 @@
+int y=0;
+print("9×9:");
+print("##|01|02|03|04|05|06|07|08|09");
+print("--+"*10);
+while(y++<9){
+  string s="0"+y+"|";
+  int x=0;
+  while(x++<9){
+    if(x*y<10)s=s+"0"+x*y+" ";
+    else s=s+x*y+" ";
+  }
+  print s;
+}
