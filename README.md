@@ -78,4 +78,7 @@ plot();#[\
  ,max-y<int|float>  \
 (,画質-x(px)<int|float>)\
 ]#
+
+#Example:
+plot(sin,-8,8,-3,3);
 ```
