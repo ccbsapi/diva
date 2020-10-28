@@ -347,7 +347,7 @@ d.memory.vars.plot={
     func:
 function(args,_this,scope){
   var func=args[0].value;
-  var pixel=500;
+  var pixelx=500;
   if(args.length>=5){
     var xmin=args[1].value;
     var xmax=args[2].value;
@@ -355,56 +355,56 @@ function(args,_this,scope){
     var ymin=args[3].value;
     var ymax=args[4].value;
     var sizeY=ymax-ymin;
-    if(args[5]&&args[5].value)pixel=args[5].value;
+    if(args[5]&&args[5].value)pixelx=args[5].value;
   }else{
     return;
   }
+  
+  var pixely=Math.floor(pixelx*sizeY/sizeX);
   var centerX=(xmin+xmax)/2;
   var centerY=(ymin+ymax)/2;
   
   var canvas=document.createElement('canvas');
-  canvas.width=pixel;
-  canvas.height=pixel;
+  canvas.width=pixelx;
+  canvas.height=pixely;
   var ctx=canvas.getContext('2d');
-  canvas.height=pixel;
-  canvas.width=pixel;
   ctx.fillStyle="#000";
-  var fsize=Math.floor(pixel/30);
+  var fsize=Math.floor(pixely/30);
   ctx.font=fsize+"px Arial";
   ctx.fillText("x:"+xmin+"~"+xmax+",y:"+ymin+"~"+ymax,fsize,fsize);
-  ctx.fillText("0",-xmin*pixel/sizeX-fsize,pixel/sizeY*(sizeY+ymin)+fsize);
-  ctx.moveTo(0,pixel/sizeY*(sizeY+ymin));
-  ctx.lineTo(pixel,pixel/sizeY*(sizeY+ymin));
-  ctx.moveTo(-xmin*pixel/sizeX,0);
-  ctx.lineTo(-xmin*pixel/sizeX,pixel);
+  ctx.fillText("0",-xmin*pixelx/sizeX-fsize,pixely/sizeY*(sizeY+ymin)+fsize);
+  ctx.moveTo(0,pixely/sizeY*(sizeY+ymin));
+  ctx.lineTo(pixelx,pixely/sizeY*(sizeY+ymin));
+  ctx.moveTo(-xmin*pixelx/sizeX,0);
+  ctx.lineTo(-xmin*pixelx/sizeX,pixely);
   ctx.stroke();
   ctx.fill();
   
-  var iData=ctx.getImageData(0,0,pixel,pixel);
+  var iData=ctx.getImageData(0,0,pixelx,pixely);
   var data=iData.data;
    var f=function(a){
      return _this.runFunc(func,[{type:'float',value:a}],scope).value;
    };
   var last=[];
   var llast=[];
-  for(var i=0;i<pixel;i++){            // x（実部）方向のループ
-    var x = i*sizeX/pixel+xmin     // 定数Cの実部
-    var now=Math.floor(pixel/sizeY*(sizeY-f(x)+ymin));
+  for(var i=0;i<pixelx;i++){            // x（実部）方向のループ
+    var x = i*sizeX/pixelx+xmin     // 定数Cの実部
+    var now=Math.floor(pixely/sizeY*(sizeY-f(x)+ymin));
     if(!Array.isArray(llast)){
     if(llast<now){
       for(var y=llast-1;y<=now+1;y++){
-        data[(y*pixel+i)*4]=200;
-        data[(y*pixel+i)*4+1]=0;
-        data[(y*pixel+i)*4+2]=200;
-        data[(y*pixel+i)*4+3]=255;
+        data[(y*pixelx+i)*4]=200;
+        data[(y*pixelx+i)*4+1]=0;
+        data[(y*pixelx+i)*4+2]=200;
+        data[(y*pixelx+i)*4+3]=255;
       }
     }
     else{
       for(var y=now-1;y<=llast+1;y++){
-        data[(y*pixel+i)*4]=200;
-        data[(y*pixel+i)*4+1]=0;
-        data[(y*pixel+i)*4+2]=200;
-        data[(y*pixel+i)*4+3]=255;
+        data[(y*pixelx+i)*4]=200;
+        data[(y*pixelx+i)*4+1]=0;
+        data[(y*pixelx+i)*4+2]=200;
+        data[(y*pixelx+i)*4+3]=255;
       }
     }
     }
