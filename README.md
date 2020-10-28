@@ -69,5 +69,12 @@ aceエディタを使ったオンライン実行、編集ページ
 divac.html内で使える関数:
 ```Python
 atan();#int,float
-plot();#[function<func>,min-x<int|float>,max-x<int|float>,min-y<int|float>,max-y<int|float>(,画質-x(px)<int|float>)]
+plot();#[\
+  function<func>    \
+ ,min-x<int|float>  \
+ ,max-x<int|float>  \
+ ,min-y<int|float>  \
+ ,max-y<int|float>  \
+(,画質-x(px)<int|float>)\
+]#
 ```
