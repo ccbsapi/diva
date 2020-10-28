@@ -43,4 +43,22 @@ def add(int a,b){#引数には型を指定できる
 }
 def float:abs(a)return sqrt(a**2);
 #戻り値の型を指定可能
+
+#組み込み変数(関数)
+
+true;#boolean
+false;#boolean
+null;#null
+
+PI;#float
+E;#float
+
+sqrt();#int,float
+log();#int,float
+sin();#int,float,complex
+cos();#int,float,complex
+tan();#int,float,complex
+sinh();#int,float,complex
+cosh();#int,float,complex
+
 ```
