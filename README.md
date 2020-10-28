@@ -54,6 +54,7 @@ PI;#float
 E;#float
 I;#complex
 
+print();#any
 sqrt();#int,float
 log();#int,float
 sin();#int,float,complex
