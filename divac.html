@@ -336,7 +336,10 @@ d.memory.vars.atan={
   type:'func'
   ,value:{
     native:true,
-    func:function(args){return {type:'float',value:Math.atan(args[0].value)}}
+    func:function(args){
+      if(!args||!args[0])return;
+      return {type:'float',value:Math.atan(args[0].value)
+    }}
   }
 }
 

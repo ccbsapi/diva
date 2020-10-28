@@ -30,7 +30,7 @@ var Diva=function(code){
           }}
         }
         ,'sin':{type:'func',value:{'native':true,func:function(args,_this){
-            if(!args[0]||!args[0])return{type:null};
+            if(!args[0]||!args[0])return{type:'null'};
             if(args[0].type=="float"||args[0].type=="int")
               return {type:'float',value:Math.sin(args[0].value)};
             if(args[0].type=="complex"){
@@ -41,7 +41,7 @@ var Diva=function(code){
           }}
         }
         ,'cos':{type:'func',value:{'native':true,func:function(args,_this){
-            if(!args[0]||!args[0])return{type:null};
+            if(!args[0]||!args[0])return{type:'null'};
             if(args[0].type=="float"||args[0].type=="int")
               return {type:'float',value:Math.cos(args[0].value)};
             if(args[0].type=="complex"){
@@ -52,7 +52,7 @@ var Diva=function(code){
           }}
         }
         ,'tan':{type:'func',value:{'native':true,func:function(args,_this){
-            if(!args[0]||!args[0])return{type:null};
+            if(!args[0]||!args[0])return{type:'null'};
             if(args[0].type=="float"||args[0].type=="int")
               return {type:'float',value:Math.tan(args[0].value)};
             if(args[0].type=="complex"){
@@ -68,7 +68,7 @@ var Diva=function(code){
         }
         
         ,'sinh':{type:'func',value:{'native':true,func:function(args,_this){
-            if(!args[0]||!args[0])return{type:null};
+            if(!args[0]||!args[0])return{type:'null'};
             if(args[0].type=="float"||args[0].type=="int")
               return {type:'float',value:_this.funcs.sinh(args[0].value)};
             if(args[0].type=="complex"){
@@ -79,7 +79,7 @@ var Diva=function(code){
           }}
         }
         ,'cosh':{type:'func',value:{'native':true,func:function(args,_this){
-            if(!args[0]||!args[0])return{type:null};
+            if(!args[0]||!args[0])return{type:'null'};
             if(args[0].type=="float"||args[0].type=="int")
               return {type:'float',value:_this.funcs.cosh(args[0].value)};
             if(args[0].type=="complex"){
@@ -719,7 +719,7 @@ var Diva=function(code){
       ,boolean:{native:true,func:function(args){
         var type=args[0].type;
         if(type=="int"||type=="float"||type=="string"||type=="null")return !!(args[0].value);
-        if(type==null)return false;
+        //if(type==null)return false;
         return true;
       }}
       ,string:{native:true,func:function(args){
