@@ -52,6 +52,7 @@ null;#null
 
 PI;#float
 E;#float
+I;#complex
 
 sqrt();#int,float
 log();#int,float
