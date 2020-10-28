@@ -214,7 +214,7 @@
        <div style="overflow:hidden;">
          <label class="tab_item" for="tab-stdout" id="tab_item-1">出力</label>
          <label class="tab_item" for="tab-stderr" id="tab_item-2">エラー</label>
-         <label class="tab_item" for="tab-stdin">入力</label>
+         <label class="tab_item" for="tab-stdin">画像</label>
        </div>
        <input id="tab-stdout" type="radio" name="tab_item" checked>
        <input id="tab-stderr" type="radio" name="tab_item">
@@ -222,7 +222,7 @@
        <div id="tab-col"></div>
        <textarea class="tab_content" id="stdout" readonly></textarea>
        <textarea class="tab_content" id="stderr" readonly></textarea>
-       <textarea class="tab_content" id="stdin"></textarea>
+       <div class="tab_content" id="stdin" style="overflow:scroll;"></div>
      </div>
  </div>
  <div id="notify"></div>
@@ -307,8 +307,10 @@ function run(){
     stderr.value="";
     var terr=document.getElementById('tab_item-2');
     terr.style.backgroundColor="#d9d9d9";
-    try{
+    
         var diva=new Diva(editor.session.getValue(),{stdout:stdout,stderr:stderr});
+        addFunc(diva);
+    try{
         time=diva.run();
         stdout.value+=diva.stdout;
     }catch(e){
@@ -330,6 +332,100 @@ function notify(s){
   clearTimeout(window.notifyTimer);
   window.notifyTimer=setTimeout(function(){nbox.style.display="none";},2000);
 }
+
+function addFunc(d){
+
+d.memory.vars.atan={
+  type:'func'
+  ,value:{
+    native:true,
+    func:function(args){return {type:'float',value:Math.atan(args[0].value)}}
+  }
+}
+
+d.memory.vars.plot={
+  type:'func'
+  ,value:{
+    native:true,
+    func:
+function(args,_this,scope){
+  var func=args[0].value;
+  var pixel=500;
+  if(args.length>=5){
+    var xmin=args[1].value;
+    var xmax=args[2].value;
+    var sizeX=xmax-xmin;
+    var ymin=args[3].value;
+    var ymax=args[4].value;
+    var sizeY=ymax-ymin;
+    if(args[5]&&args[5].value)pixel=args[5].value;
+  }else{
+    return;
+  }
+  var centerX=(xmin+xmax)/2;
+  var centerY=(ymin+ymax)/2;
+  
+  var canvas=document.createElement('canvas');
+  canvas.width=pixel;
+  canvas.height=pixel;
+  var ctx=canvas.getContext('2d');
+  canvas.height=pixel;
+  canvas.width=pixel;
+  ctx.fillStyle="#000";
+  var fsize=Math.floor(pixel/30);
+  ctx.font=fsize+"px Arial";
+  ctx.fillText("x:"+xmin+"~"+xmax+",y:"+ymin+"~"+ymax,fsize,fsize);
+  ctx.fillText("0",-xmin*pixel/sizeX-fsize,pixel/sizeY*(sizeY+ymin)+fsize);
+  ctx.moveTo(0,pixel/sizeY*(sizeY+ymin));
+  ctx.lineTo(pixel,pixel/sizeY*(sizeY+ymin));
+  ctx.moveTo(-xmin*pixel/sizeX,0);
+  ctx.lineTo(-xmin*pixel/sizeX,pixel);
+  ctx.stroke();
+  ctx.fill();
+  
+  var iData=ctx.getImageData(0,0,pixel,pixel);
+  var data=iData.data;
+   var f=function(a){
+     return _this.runFunc(func,[{type:'float',value:a}],scope).value;
+   };
+  var last=[];
+  var llast=[];
+  for(var i=0;i<pixel;i++){            // x（実部）方向のループ
+    var x = i*sizeX/pixel+xmin     // 定数Cの実部
+    var now=Math.floor(pixel/sizeY*(sizeY-f(x)+ymin));
+    if(!Array.isArray(llast)){
+    if(llast<now){
+      for(var y=llast-1;y<=now+1;y++){
+        data[(y*pixel+i)*4]=200;
+        data[(y*pixel+i)*4+1]=0;
+        data[(y*pixel+i)*4+2]=200;
+        data[(y*pixel+i)*4+3]=255;
+      }
+    }
+    else{
+      for(var y=now-1;y<=llast+1;y++){
+        data[(y*pixel+i)*4]=200;
+        data[(y*pixel+i)*4+1]=0;
+        data[(y*pixel+i)*4+2]=200;
+        data[(y*pixel+i)*4+3]=255;
+      }
+    }
+    }
+    llast=last;
+    last=now;
+  }
+  var len=data.length;
+  for(var i=3;i<len;i+=4)if(!data[i])data[i-3]=data[i-2]=data[i-1]=data[i]=255;
+  iData.data=data;
+  ctx.putImageData(iData,0,0);
+  var img=document.createElement('img');
+  img.src=canvas.toDataURL();
+  img.style.width="100%";
+  document.getElementById('stdin').appendChild(img);
+  }}
+};
+}
+
 </script>
 </body>
 </html>
