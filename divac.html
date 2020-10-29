@@ -386,33 +386,36 @@ function(args,_this,scope){
   var iData=ctx.getImageData(0,0,pixelx,pixely);
   var data=iData.data;
    var f=function(a){
-     return _this.runFunc(func,[{type:'float',value:a}],scope).value;
+     return _this.runFunc(func,[{type:'float',value:a}],scope);
    };
   var last=[];
   var llast=[];
-  for(var i=0;i<pixelx;i++){            // x（実部）方向のループ
+  for(var i=-1;i<pixelx;i++){            // x（実部）方向のループ
     var x = i*sizeX/pixelx+xmin     // 定数Cの実部
-    var now=Math.floor(pixely/sizeY*(sizeY-f(x)+ymin));
-    if(!Array.isArray(llast)){
-    if(llast<now){
-      for(var y=llast-1;y<=now+1;y++){
-        data[(y*pixelx+i)*4]=200;
-        data[(y*pixelx+i)*4+1]=0;
-        data[(y*pixelx+i)*4+2]=200;
-        data[(y*pixelx+i)*4+3]=255;
+    var fv=f(x);
+    var v=[];
+    if(fv.type=="complex")v=fv.value;
+    if(fv.type=="float"||fv.type=="int")v=[fv.value];
+    for(var vi in v){
+      if(vi[v]!==vi[v])continue;
+      var vy=Math.floor(pixely/sizeY*(sizeY-v[vi]+ymin));
+      v[vi]=vy<0?-1:vy>pixely?pixely+1:vy;
+    };
+    for(var vi in v){
+      var val=v[vi];
+      if(val!==val)continue;
+      if(i>0){
+        var vs=llast[vi]>val?[val,llast[vi]]:[llast[vi],val];
+          for(var y=vs[0];y<=vs[1];y++){
+            data[(y*pixelx+i)*4]=200;
+            data[(y*pixelx+i)*4+1]=0;
+            data[(y*pixelx+i)*4+2]=200;
+            data[(y*pixelx+i)*4+3]=255;
+          }
       }
-    }
-    else{
-      for(var y=now-1;y<=llast+1;y++){
-        data[(y*pixelx+i)*4]=200;
-        data[(y*pixelx+i)*4+1]=0;
-        data[(y*pixelx+i)*4+2]=200;
-        data[(y*pixelx+i)*4+3]=255;
-      }
-    }
     }
     llast=last;
-    last=now;
+    last=v;
   }
   var len=data.length;
   for(var i=3;i<len;i+=4)if(!data[i])data[i-3]=data[i-2]=data[i-1]=data[i]=255;
