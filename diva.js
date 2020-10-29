@@ -26,8 +26,10 @@ var Diva=function(code){
         
         ,'log':{type:'func',value:{'native':true,func:function(args,_this){
             if(!args[0]||!args[0])return{type:'null'};
-            if(args[0].type=="float"||args[0].type=="int")
-              return {type:'float',value:Math.log(args[0].value)};
+            if(args[0].type=="float"||args[0].type=="int"){
+              var argv=args[0].value;
+              return argv<0?{type:'complex',value:[Math.log(-argv),Math.PI]}:{type:'float',value:Math.log(argv)};
+            }
             if(args[0].type=="complex"){
               var a=args[0].value[0];
               var b=args[0].value[1];
