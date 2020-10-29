@@ -406,7 +406,7 @@ function(args,_this,scope){
       if(val!==val)continue;
       if(i>=0){
         var vs=llast[vi]>val?[val,llast[vi]]:[llast[vi],val];
-        for(var y=vs[0];y<=vs[1];y++){
+        for(var y=vs[0]-1;y<=vs[1]+1;y++){
           if(vi==0){//実部
             data[(y*pixelx+i)*4]=200;
             data[(y*pixelx+i)*4+1]=0;
