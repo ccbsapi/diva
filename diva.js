@@ -24,9 +24,15 @@ var Diva=function(code){
         }
         ,'typeof':{type:'func',value:{rtype:"string",'native':true,func:function(args){return {type:"string",value:args[args.length-1].type}}}}
         
-        ,'log':{type:'func',value:{rtype:"float",'native':true,func:function(args,_this){
-            var a=_this.forceType(args[0]||{},"float");
-            return {type:'float',value:Math.log(a.value)};
+        ,'log':{type:'func',value:{'native':true,func:function(args,_this){
+            if(!args[0]||!args[0])return{type:'null'};
+            if(args[0].type=="float"||args[0].type=="int")
+              return {type:'float',value:Math.log(args[0].value)};
+            if(args[0].type=="complex"){
+              var a=args[0].value[0];
+              var b=args[0].value[1];
+              return {type:"complex",value:[Math.log(a*a+b*b)/2,a<0?(Math.PI-Math.atan(Math.abs(b/a)))*(b<0?-1:1):Math.atan(b/(a||0))]}
+            }
           }}
         }
         ,'sin':{type:'func',value:{'native':true,func:function(args,_this){
@@ -1454,7 +1460,7 @@ Diva.prototype={
           if(opobj.type&1&&last&&(!next||next.type=="operator")){//後置
             newStack[newStack.length-1]=_this.runFunc(opobj,[conV(newStack[newStack.length-1]),null],scope)||{type:'null'};
           }else
-          if((opobj.type&2||opobj.type==-2)&&last&&next){ //中置演算子
+          if((opobj.type&2||opobj.type==-2)&&i&&next){ //中置演算子
             opStatus=1;
             if(opobj.list&&!v.list)flist=true;
             return;
@@ -1485,7 +1491,7 @@ Diva.prototype={
       }
       opStatus=0;
     });
-    stack=newStack;
+    stack=newStack; //stack更新
     newStack=[];
     
   }
