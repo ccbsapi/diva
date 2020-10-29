@@ -24,6 +24,22 @@ var Diva=function(code){
         }
         ,'typeof':{type:'func',value:{rtype:"string",'native':true,func:function(args){return {type:"string",value:args[args.length-1].type}}}}
         
+        
+        
+        ,'sqrt':{type:'func',value:{'native':true,func:function(args,_this){
+            if(!args[0]||!args[0])return{type:'null'};
+            if(args[0].type=="float"||args[0].type=="int"){
+              var argv=args[0].value;
+              return argv<0?{type:'complex',value:[Math.sqrt(-argv),1]}:{type:'float',value:Math.sqrt(argv)};
+            }
+            if(args[0].type=="complex"){
+              var a=args[0].value[0];
+              var b=args[0].value[1];
+              var raabb=Math.sqrt(a*a+b*b);
+              return {type:"complex",value:[Math.sqrt((raabb+a)/2),Math.sqrt((raabb-a)/2)*(b<0?-1:1)]}
+            }
+          }}
+        }
         ,'log':{type:'func',value:{'native':true,func:function(args,_this){
             if(!args[0]||!args[0])return{type:'null'};
             if(args[0].type=="float"||args[0].type=="int"){
@@ -95,12 +111,6 @@ var Diva=function(code){
               var b=args[0].value[1];
               return {type:"complex",value:[_this.funcs.cosh(a)*Math.cos(b),_this.funcs.sinh(a)*Math.sin(b)]}
             }
-          }}
-        }
-        
-        ,'sqrt':{type:'func',value:{rtype:"float",'native':true,func:function(args,_this){
-            var a=_this.forceType(args[0]||{},"float");
-            return {type:'float',value:Math.sqrt(a.value)};
           }}
         }
         
