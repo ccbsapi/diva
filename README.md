@@ -25,6 +25,10 @@ struct o={
 　 p:"property"
 };
 o.p;#"property"
+
+array arr=[1,3,5];
+print(arr[1*2]);#5
+
 i++;
 #ここはコメント\
 複数行コメント#
@@ -55,8 +59,9 @@ E;#float
 I;#complex
 
 print();#any
-sqrt();#int,float
-log();#int,float
+if();#any
+sqrt();#int,float,complex
+log();#int,float,complex
 sin();#int,float,complex
 cos();#int,float,complex
 tan();#int,float,complex
