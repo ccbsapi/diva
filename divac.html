@@ -399,24 +399,25 @@ function(args,_this,scope){
     for(var vi in v){
       if(vi[v]!==vi[v])continue;
       var vy=Math.floor(pixely/sizeY*(sizeY-v[vi]+ymin));
-      v[vi]=vy<0?-1:vy>pixely?pixely+1:vy;
+      v[vi]=vy<0?-2:vy>pixely?pixely+2:vy;
     };
     for(var vi in v){
       var val=v[vi];
       if(val!==val)continue;
-      if(i>=0){
+      if(i>0){
+        if(typeof llast[vi]=="undefined")llast[vi]=val;
         var vs=llast[vi]>val?[val,llast[vi]]:[llast[vi],val];
         for(var y=vs[0]-1;y<=vs[1]+1;y++){
           if(vi==0){//実部
-            data[(y*pixelx+i)*4]=200;
-            data[(y*pixelx+i)*4+1]=0;
-            data[(y*pixelx+i)*4+2]=100;
+            data[(y*pixelx+i-1)*4]=200;
+            data[(y*pixelx+i-1)*4+1]=0;
+            data[(y*pixelx+i-1)*4+2]=100;
           }else{//虚部
-            data[(y*pixelx+i)*4]=0;
-            data[(y*pixelx+i)*4+1]=50;
-            data[(y*pixelx+i)*4+2]=200;
+            data[(y*pixelx+i-1)*4]=0;
+            data[(y*pixelx+i-1)*4+1]=50;
+            data[(y*pixelx+i-1)*4+2]=200;
           }
-          data[(y*pixelx+i)*4+3]=255;
+          data[(y*pixelx+i-1)*4+3]=255;
         }
       }
     }
