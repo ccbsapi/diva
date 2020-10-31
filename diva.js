@@ -5,28 +5,28 @@ var Diva=function(code){
   this.memory={
     vars:
       {
-         null:{type:'null'}
-        ,'true':{type:'boolean',value:true}
-        ,'false':{type:'boolean',value:false}
-        ,NaN:{type:'int',value:NaN}
-        ,Infinity:{type:'int',value:1/0}
-        ,PI:{type:'float',value:Math.PI}
-        ,E:{type:'float',value:Math.E}
-        ,I:{type:'complex',value:[0,1]}
+         '!null':{type:'null'}
+        ,'!true':{type:'boolean',value:true}
+        ,'!false':{type:'boolean',value:false}
+        ,'!NaN':{type:'int',value:NaN}
+        ,'!Infinity':{type:'int',value:1/0}
+        ,'!PI':{type:'float',value:Math.PI}
+        ,'!E':{type:'float',value:Math.E}
+        ,'!I':{type:'complex',value:[0,1]}
         
         
-        ,'if':{type:'func',value:{rtype:"boolean",'native':true,func:function(args){var v=args[args.length-1];return v;}}}
-        ,'alert':{type:'func',value:{rtype:"null",'native':true,func:function(args,_this){alert(args.map(function(i){return _this.toStr(i)}));}}}
-        ,'print':{type:'func',value:{rtype:"null",'native':true,func:function(args,_this){
+        ,'!if':{type:'func',value:{rtype:"boolean",'native':true,func:function(args){var v=args[args.length-1];return v;}}}
+        ,'!alert':{type:'func',value:{rtype:"null",'native':true,func:function(args,_this){alert(args.map(function(i){return _this.toStr(i)}));}}}
+        ,'!print':{type:'func',value:{rtype:"null",'native':true,func:function(args,_this){
             args.forEach(function(v){
               _this.stdout+=_this.toStr(v)+"\n";
             });}}
         }
-        ,'typeof':{type:'func',value:{rtype:"string",'native':true,func:function(args){return {type:"string",value:args[args.length-1].type}}}}
+        ,'!typeof':{type:'func',value:{rtype:"string",'native':true,func:function(args){return {type:"string",value:args[args.length-1].type}}}}
         
         
         
-        ,'sqrt':{type:'func',value:{'native':true,func:function(args,_this){
+        ,'!sqrt':{type:'func',value:{'native':true,func:function(args,_this){
             if(!args[0]||!args[0])return{type:'null'};
             if(args[0].type=="float"||args[0].type=="int"){
               var argv=args[0].value;
@@ -40,7 +40,7 @@ var Diva=function(code){
             }
           }}
         }
-        ,'log':{type:'func',value:{'native':true,func:function(args,_this){
+        ,'!log':{type:'func',value:{'native':true,func:function(args,_this){
             if(!args[0]||!args[0])return{type:'null'};
             if(args[0].type=="float"||args[0].type=="int"){
               var argv=args[0].value;
@@ -53,7 +53,7 @@ var Diva=function(code){
             }
           }}
         }
-        ,'sin':{type:'func',value:{'native':true,func:function(args,_this){
+        ,'!sin':{type:'func',value:{'native':true,func:function(args,_this){
             if(!args[0]||!args[0])return{type:'null'};
             if(args[0].type=="float"||args[0].type=="int")
               return {type:'float',value:Math.sin(args[0].value)};
@@ -64,7 +64,7 @@ var Diva=function(code){
             }
           }}
         }
-        ,'cos':{type:'func',value:{'native':true,func:function(args,_this){
+        ,'!cos':{type:'func',value:{'native':true,func:function(args,_this){
             if(!args[0]||!args[0])return{type:'null'};
             if(args[0].type=="float"||args[0].type=="int")
               return {type:'float',value:Math.cos(args[0].value)};
@@ -75,7 +75,7 @@ var Diva=function(code){
             }
           }}
         }
-        ,'tan':{type:'func',value:{'native':true,func:function(args,_this){
+        ,'!tan':{type:'func',value:{'native':true,func:function(args,_this){
             if(!args[0]||!args[0])return{type:'null'};
             if(args[0].type=="float"||args[0].type=="int")
               return {type:'float',value:Math.tan(args[0].value)};
@@ -91,7 +91,7 @@ var Diva=function(code){
           }}
         }
         
-        ,'sinh':{type:'func',value:{'native':true,func:function(args,_this){
+        ,'!sinh':{type:'func',value:{'native':true,func:function(args,_this){
             if(!args[0]||!args[0])return{type:'null'};
             if(args[0].type=="float"||args[0].type=="int")
               return {type:'float',value:_this.funcs.sinh(args[0].value)};
@@ -102,7 +102,7 @@ var Diva=function(code){
             }
           }}
         }
-        ,'cosh':{type:'func',value:{'native':true,func:function(args,_this){
+        ,'!cosh':{type:'func',value:{'native':true,func:function(args,_this){
             if(!args[0]||!args[0])return{type:'null'};
             if(args[0].type=="float"||args[0].type=="int")
               return {type:'float',value:_this.funcs.cosh(args[0].value)};
@@ -116,7 +116,7 @@ var Diva=function(code){
         
         
         
-        ,'int':{
+        ,'!int':{
           type:'class',
           name:'int',
          // const:1,
@@ -125,7 +125,7 @@ var Diva=function(code){
               return (args[0]&&_this.forceType(args[0],'int'))||0;
             }},
             props:{
-              log:{type:'func',value:{native:true,func:function(args,_this,scope,self){
+              '!log':{type:'func',value:{native:true,func:function(args,_this,scope,self){
                 var data=self.data||{};
                 var th=data.this;
                 var x=1;
@@ -143,7 +143,7 @@ var Diva=function(code){
             }}
           }
         },
-        'float':{
+        '!float':{
           type:'class',
           name:'float',
          // const:1,
@@ -154,17 +154,17 @@ var Diva=function(code){
               return (args[0]&&_this.forceType(args[0],'float'))||0;
             }},
             props:{
-              'val':{type:'int',value:100}
+              '!val':{type:'int',value:100}
             },
             statics:{
-              'v':{type:'int',value:1000}
+              '!v':{type:'int',value:1000}
             },
             toStr:function(val){
               val.toString();
             }
           }
         },
-        'complex':{
+        '!complex':{
           type:'class',
           name:'complex',
          // const:1,
@@ -175,17 +175,17 @@ var Diva=function(code){
               return (args[0]&&_this.forceType(args[0],'complex'))||[0,0];
             }},
             props:{
-              'val':{type:'int',value:100}
+              '!val':{type:'int',value:100}
             },
             statics:{
-              'v':{type:'int',value:1000}
+              '!v':{type:'int',value:1000}
             },
             toStr:function(val){
               val.toString();
             }
           }
         },
-        'string':{
+        '!string':{
           type:'class',
           name:'string',
          // const:1,
@@ -196,17 +196,17 @@ var Diva=function(code){
               return (args[0]&&_this.forceType(args[0],'string'))||'';
             }},
             props:{
-              'val':0
+              '!val':0
             },
             statics:{
-              'v':{type:'int',value:10}
+              '!v':{type:'int',value:10}
             },
             toStr:function(val){
               val.toString();
             }
           }
         },
-        'boolean':{
+        '!boolean':{
           type:'class',
           name:'boolean',
          // const:1,
@@ -217,17 +217,17 @@ var Diva=function(code){
               return (args[0]&&_this.forceType(args[0],'boolean'))||0;
             }},
             props:{
-              'val':0
+              '!val':0
             },
             statics:{
-              'v':{type:'int',value:10}
+              '!v':{type:'int',value:10}
             },
             toStr:function(val){
               val.toString();
             }
           }
         },
-        'struct':{
+        '!struct':{
           type:'class',
           name:'struct',
          // const:1,
@@ -238,17 +238,17 @@ var Diva=function(code){
               return {};
             }},
             props:{
-              'val':0
+              '!val':0
             },
             statics:{
-              'v':{type:'int',value:10}
+              '!v':{type:'int',value:10}
             },
             toStr:function(val){
               val.toString();
             }
           }
         },
-        'array':{
+        '!array':{
           type:'class',
           name:'array',
          // const:1,
@@ -259,17 +259,24 @@ var Diva=function(code){
               return [];
             }},
             props:{
-              'val':0
+              '!length':{type:'func',value:{native:true,func:function(args,_this,scope,self){
+                var data=self.data||{};
+                return {type:'int',value:data.this.value.length};
+              }}}
+              ,'!push':{type:'func',value:{native:true,func:function(args,_this,scope,self){
+                self.data.this.value.push(args[0]);
+                return self.data.this;
+              }}}
             },
             statics:{
-              'v':{type:'int',value:10}
+              '!v':{type:'int',value:10}
             },
             toStr:function(val){
               val.toString();
             }
           }
         },
-        'func':{
+        '!func':{
           type:'class',
           name:'func',
          // const:1,
@@ -896,7 +903,7 @@ Diva.prototype={
     scope=scope||[0];
     ops=ops||{};
     var sc=this.getScope(scope);
-    if(sc[name])return sc[name]
+    if(sc["!"+name])return sc["!"+name]
     else{
       if(!scope.length){
         if(!ops.noerr)throw "Diva:ReferenceError: "+name+" is not defined";
@@ -909,10 +916,10 @@ Diva.prototype={
     var already=this.getVar(name,scope,{noerr:true});
     if(already&&already.type=="class")this.throw('ReferenceError','class '+name+' is already defined');
     var sc=this.getScope(scope);
-    if(sc[name])this.throw('ReferencesError','variable '+name+' is already defined');
+    if(sc["!"+name])this.throw('ReferencesError','variable '+name+' is already defined');
     var cla=this.getVar(data.type,scope,{noerr:true});
     if(!cla)this.throw('ReferenceError','class '+data.type+' is not defined');
-    sc[name]={type:data.type,value:this.runFunc(cla.value.constructor,[],scope)}
+    sc["!"+name]={type:data.type,value:this.runFunc(cla.value.constructor,[],scope)}
   }
   ,forceType:function(v,type){
     var changer=this.toType;
@@ -936,11 +943,16 @@ Diva.prototype={
   ,getProperty:function self(obj,pn,scope){
     var type=obj.type;
     var obp=null;
+    if(type!="array")pn="!"+pn;
     if(type=="class"){
       obp=(obj.value[type=="class"?"statics":"props"]||{})[pn]
-    }else if(type=="struct"||type=="array"){
+    }else if(type=="struct"){
       if(!obj.value[pn])obj.value[pn]={type:'null'};
-      obp=obj.value[pn];
+      obp=(obj.value[pn].type!="null"&&obj.value[pn])||((this.getVar(type,scope).value||{}).props||{})[pn]||obj.value[pn];
+    }else if(type=="array"){
+      if(pn*1!==pn*1)return ((this.getVar(type,scope).value||{}).props||{})["!"+pn]||{type:'null'};//非数字プロパティ
+      if(!obj.value[pn])obj.value[pn]={type:'null'};
+      obp=(obj.value[pn].type!="null"&&obj.value[pn])||((this.getVar(type,scope).value||{}).props||{})["!"+pn]||obj.value[pn];
     }else{
       obp=((this.getVar(type,scope).value||{}).props||{})[pn];
     }
@@ -952,7 +964,7 @@ Diva.prototype={
     var sc=this.getScope(scope);
     var rs=[];
     for(v in sc){
-      if(sc[v]&&sc[v].type=="class")rs.push(v);
+      if(sc[v]&&sc[v].type=="class")rs.push(v.slice(1));
     }
     if(scope.length){
       [].push.apply(rs,_this.getClassList(scope.slice(0,-1)));
