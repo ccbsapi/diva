@@ -265,6 +265,7 @@ var Diva=function(code){
               }}}
               ,'!push':{type:'func',value:{native:true,func:function(args,_this,scope,self){
                 self.data.this.value.push(args[0]);
+                //alert(JSON.stringify(self.data.this));
                 return self.data.this;
               }}}
             },
@@ -405,7 +406,7 @@ var Diva=function(code){
             return obj;
           }
         },
-        "[]":{
+        "[ ]":{
           type:2,
           'native':true,
           func:function(args,_this,scope){
@@ -919,7 +920,7 @@ Diva.prototype={
     if(sc["!"+name])this.throw('ReferencesError','variable '+name+' is already defined');
     var cla=this.getVar(data.type,scope,{noerr:true});
     if(!cla)this.throw('ReferenceError','class '+data.type+' is not defined');
-    sc["!"+name]={type:data.type,value:this.runFunc(cla.value.constructor,[],scope)}
+    sc["!"+name]={type:data.type,name:name,value:this.runFunc(cla.value.constructor,[],scope)}
   }
   ,forceType:function(v,type){
     var changer=this.toType;
@@ -1300,17 +1301,17 @@ Diva.prototype={
         }
         stack.push({type:"string",value:v[1]});
       }else if(v[0]=="struct"){
-        var obj={type:"struct",value:{}};
+        var obj={type:"!struct",value:{}};
         for(var obji in v[1]){
           var objv=v[1][obji];
           obj.value[objv.key]=objv.value;
         }
         stack.push(obj);
       }else if(v[0]=="array"){
-        var obj={type:"array",value:v[1]};
+        var obj={type:"!array",value:v[1]};
         if(last&&last.type!="operator"){
           if(v[1].length==1){
-            stack.push({type:'operator',value:_this.searchOperator("[]",1),list:true});
+            stack.push({type:'operator',value:_this.searchOperator("[ ]",1),list:true});
             stack.push(["(",[[v[1][0]]]]); //ブラケット内
             return;
           }
@@ -1507,16 +1508,17 @@ Diva.prototype={
   var _this=this;
   var obj=[];
   var valstack=[];
-  for(var i=0;i<=parts.length;i++){
-    var v=i==parts.length?",":parts[i];
-    if(!v)break;//最後の,処理
+  for(var i=0;i<parts.length;i++){
+    var v=parts[i];//i==parts.length?",":parts[i];
+    //if(!v)break;//最後の,処理
     if(v==","){
-      obj.push(valstack.length?_this.parseExpression(valstack,scope)[0][0]:["null"]);
+      obj.push(valstack.length?_this.parseExpression(valstack,scope)[0][0]:[{type:"null"}]);
       valstack=[];
     }else{
         valstack.push(v);
     }
   }
+  if(valstack.length)obj.push(valstack.length?_this.parseExpression(valstack,scope)[0][0]:[{type:"null"}]);
   return ["array",obj];
 }
 
@@ -1531,11 +1533,11 @@ Diva.prototype={
     return (Array.isArray(v)&&v[0]=="(")?_this.exec(v[1],scope)
            :(v&&v.type=="var")?_this.getVar(v.value,scope)
            :(v&&v.type=="defVar")?(_this.defVar(v.value.name,v.value.defData,scope),_this.getVar(v.value.name,scope))
-           :(v&&(v.type=="struct"||v.type=="array"))?(function(){
+           :(v&&(v.type=="!struct"||v.type=="!array"))?(function(){
              for(prop in v.value){
                v.value[prop]=_this.eval(v.value[prop],scope);
              }
-             //console.log(JSON.stringify(v));
+             v.type=v.type.slice(1);
              return v;
            })():v;
   };
@@ -1571,7 +1573,7 @@ Diva.prototype={
           else if(opobj.list){
             if(Array.isArray(v))v=_this.exec(v,scope,true);
             else v=[conV(v)];
-          }else v=conV(v)
+          }else{v=conV(v)}
           newStack[(newStack.length||1)-1]=_this.runFunc(opobj,[conV(newStack[newStack.length-1]),v],scope)||{type:'null'};
           flist=false;
           opStatus=0;
