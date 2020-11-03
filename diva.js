@@ -265,7 +265,6 @@ var Diva=function(code){
               }}}
               ,'!push':{type:'func',value:{native:true,func:function(args,_this,scope,self){
                 self.data.this.value.push(args[0]);
-                //alert(JSON.stringify(self.data.this));
                 return self.data.this;
               }}}
             },
@@ -858,6 +857,7 @@ Diva.prototype={
             if(ifv=="if"){els=false;continue;}
             else if(els){
               var rv=self(v[ifn],scope,_this);
+              
               if(rv)return rv;
               break;
             }
@@ -1106,7 +1106,8 @@ Diva.prototype={
 ,makeTree:function(scope){
   var parts=this.toParts(this.code);
   var tr=this.parseBracket(parts);
-  return this.parseStatement(tr,scope);
+  var rtr=this.parseStatement(tr,scope);
+  return rtr;
 }
 ,parseStatement:function(code,scope){
   _this=this;
@@ -1118,6 +1119,7 @@ Diva.prototype={
   var last=[];
   var blockn=0;
   var defdata={};
+  if(code[code.length-1]!=";")code.push(";");
   code.forEach(function(v,i){
     if(!v)return;
     if(Array.isArray(v)){
@@ -1212,7 +1214,7 @@ Diva.prototype={
         syntax='';defdata={};
       }else
       if(syntax=="else"){
-        last.push([[';',_this.parseExpression(Statement,scope)]]);
+        last.push(_this.parseStatement(Statement,scope));
         syntax='';
       }else if(syntax=="return"){
         stack.push(['return',_this.parseExpression(Statement,scope)]);
