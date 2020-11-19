@@ -1,7 +1,6 @@
 /*!Diva.js
   
   関数スコープの修正
-  変数スタックのtypeをvar -> !var (クラス重複防止)
   実行中の行情報追加
   ***************
   処理中断(状態保持)、ジェネレータ
@@ -325,8 +324,10 @@ var Diva=function(code){
         result=_this.runFunc(fobj,[a.value,b.value],scope);
       }
     }
+    
     if(typeof result=='object'&&!Array.isArray(result))
       return result;
+    //else return{type:"int",value:NaN}
   };
   this.funcs={
     sinh:function(a){
@@ -566,19 +567,27 @@ var Diva=function(code){
           func:this.operateFunction,
           'fs':{
             '[consider]':{
-              null:{native:true,func:function(){return {type:'int',value:0}}}
+              null:{native:true,func:function(){return {type:'float',value:0}}}
+              ,int:{native:true,func:function(v){return {type:'float',value:v}}}
             }
             ,'[others]':{native:true,func:function(){}}
-            ,'int':{
+            /*,'int':{
                'int':{native:true,func:function(args){return {type:'int',value:args[0]/args[1]}}}
               ,'float':{native:true,func:function(args){return {type:'float',value:args[0]/args[1]}}}
-            }
+            }*/
             ,'float':{
               'int':{native:true,func:function(args){return {type:'float',value:args[0]/args[1]}}}
               ,'float':{native:true,func:function(args){return {type:'float',value:args[0]/args[1]}}}
+              ,'complex':{native:true,func:function(args){
+                var a=args[0];
+                var c=args[1][0];
+                var d=args[1][1];
+                return {type:'complex',value:[(a*c)/(c*c+d*d),(-a*d)/(c*c+d*d)]}
+              }}
+              
             }
             ,'string':{
-              'int':{native:true,func:function(args){return {type:'string',value:(function(i){var rs="";while(i-->0){rs+=args[0]}return rs})(args[1])}}}
+              'int':{native:true,$func:function(args){return {type:'string',value:(function(i){var rs="";while(i-->0){rs+=args[0]}return rs})(args[1])}}}
             }
             ,'complex':{
                'int':{native:true,func:function(args){return {type:'complex',value:[args[0][0]/args[1],args[0][1]/args[1]]}}}
@@ -619,7 +628,7 @@ var Diva=function(code){
             }
           }
         },
-      },
+      },  
       {
         "+":{
           type:2+4,
@@ -1363,7 +1372,7 @@ Diva.prototype={
           val.const=2;
         }*/
         //stack.push({type:"var",value:v});
-        stack.push({type:"defVar",value:{name:v,defData:defData}});
+        stack.push({type:"!defVar",value:{name:v,defData:defData}});
         DefProp=0;
         defData={};
       }else
@@ -1384,7 +1393,7 @@ Diva.prototype={
           defData.type=v;
           DefProp=1;
         }else{
-          stack.push({type:"var",value:v});
+          stack.push({type:"!var",value:v});
         }
       }
     }
@@ -1541,8 +1550,8 @@ Diva.prototype={
   var flist=false;
   var conV=function(v){
     return (Array.isArray(v)&&v[0]=="(")?_this.exec(v[1],scope)
-           :(v&&v.type=="var")?_this.getVar(v.value,scope)
-           :(v&&v.type=="defVar")?(_this.defVar(v.value.name,v.value.defData,scope),_this.getVar(v.value.name,scope))
+           :(v&&v.type=="!var")?_this.getVar(v.value,scope)
+           :(v&&v.type=="!defVar")?(_this.defVar(v.value.name,v.value.defData,scope),_this.getVar(v.value.name,scope))
            :(v&&(v.type=="!struct"||v.type=="!array"))?(function(){
              for(prop in v.value){
                v.value[prop]=_this.eval(v.value[prop],scope);
