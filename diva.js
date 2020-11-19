@@ -1,3 +1,11 @@
+/*!Diva.js
+  
+  関数スコープの修正
+  変数スタックのtypeをvar -> !var (クラス重複防止)
+  実行中の行情報追加
+  ***************
+  処理中断(状態保持)、ジェネレータ
+*/
 var Diva=function(code){
   this.code=code.toString();
   this.stdout="";
