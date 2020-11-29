@@ -1,5 +1,7 @@
 /*!Diva.js
-  
+
+未実装:
+  class文
   関数スコープの修正
   実行中の行情報追加
   ***************
@@ -10,304 +12,8 @@ var Diva=function(code){
   this.stdout="";
   this.stderr="";
   this.memory={
-    vars:
-      {
-         '!null':{type:'null'}
-        ,'!true':{type:'boolean',value:true}
-        ,'!false':{type:'boolean',value:false}
-        ,'!NaN':{type:'int',value:NaN}
-        ,'!Infinity':{type:'int',value:1/0}
-        ,'!PI':{type:'float',value:Math.PI}
-        ,'!E':{type:'float',value:Math.E}
-        ,'!I':{type:'complex',value:[0,1]}
-        
-        
-        ,'!if':{type:'func',value:{rtype:"boolean",'native':true,func:function(args){var v=args[args.length-1];return v;}}}
-        ,'!alert':{type:'func',value:{rtype:"null",'native':true,func:function(args,_this){alert(args.map(function(i){return _this.toStr(i)}));}}}
-        ,'!print':{type:'func',value:{rtype:"null",'native':true,func:function(args,_this){
-            args.forEach(function(v){
-              _this.stdout+=_this.toStr(v)+"\n";
-            });}}
-        }
-        ,'!typeof':{type:'func',value:{rtype:"string",'native':true,func:function(args){return {type:"string",value:args[args.length-1].type}}}}
-        
-        
-        
-        ,'!sqrt':{type:'func',value:{'native':true,func:function(args,_this){
-            if(!args[0]||!args[0])return{type:'null'};
-            if(args[0].type=="float"||args[0].type=="int"){
-              var argv=args[0].value;
-              return argv<0?{type:'complex',value:[Math.sqrt(-argv),1]}:{type:'float',value:Math.sqrt(argv)};
-            }
-            if(args[0].type=="complex"){
-              var a=args[0].value[0];
-              var b=args[0].value[1];
-              var raabb=Math.sqrt(a*a+b*b);
-              return {type:"complex",value:[Math.sqrt((raabb+a)/2),Math.sqrt((raabb-a)/2)*(b<0?-1:1)]}
-            }
-          }}
-        }
-        ,'!log':{type:'func',value:{'native':true,func:function(args,_this){
-            if(!args[0]||!args[0])return{type:'null'};
-            if(args[0].type=="float"||args[0].type=="int"){
-              var argv=args[0].value;
-              return argv<0?{type:'complex',value:[Math.log(-argv),Math.PI]}:{type:'float',value:Math.log(argv)};
-            }
-            if(args[0].type=="complex"){
-              var a=args[0].value[0];
-              var b=args[0].value[1];
-              return {type:"complex",value:[Math.log(a*a+b*b)/2,a<0?(Math.PI-Math.atan(Math.abs(b/a)))*(b<0?-1:1):Math.atan(b/(a||0))]}
-            }
-          }}
-        }
-        ,'!sin':{type:'func',value:{'native':true,func:function(args,_this){
-            if(!args[0]||!args[0])return{type:'null'};
-            if(args[0].type=="float"||args[0].type=="int")
-              return {type:'float',value:Math.sin(args[0].value)};
-            if(args[0].type=="complex"){
-              var a=args[0].value[0];
-              var b=args[0].value[1];
-              return {type:"complex",value:[Math.sin(a)*_this.funcs.cosh(b),Math.cos(a)*_this.funcs.sinh(b)]}
-            }
-          }}
-        }
-        ,'!cos':{type:'func',value:{'native':true,func:function(args,_this){
-            if(!args[0]||!args[0])return{type:'null'};
-            if(args[0].type=="float"||args[0].type=="int")
-              return {type:'float',value:Math.cos(args[0].value)};
-            if(args[0].type=="complex"){
-              var a=args[0].value[0];
-              var b=args[0].value[1];
-              return {type:"complex",value:[Math.cos(a)*_this.funcs.cosh(b),-Math.sin(a)*_this.funcs.sinh(b)]}
-            }
-          }}
-        }
-        ,'!tan':{type:'func',value:{'native':true,func:function(args,_this){
-            if(!args[0]||!args[0])return{type:'null'};
-            if(args[0].type=="float"||args[0].type=="int")
-              return {type:'float',value:Math.tan(args[0].value)};
-            if(args[0].type=="complex"){
-              var a=args[0].value[0];
-              var b=args[0].value[1];
-              var bb=Math.cos(2*a)+_this.funcs.cosh(2*b); //分母
-              /*
-                tanx=(sin(2a)+isinh(2b))/(cos(2a)+cosh(2b))
-              */
-              return {type:"complex",value:[Math.sin(2*a)/bb,_this.funcs.sinh(2*b)/bb]}
-            }
-          }}
-        }
-        
-        ,'!sinh':{type:'func',value:{'native':true,func:function(args,_this){
-            if(!args[0]||!args[0])return{type:'null'};
-            if(args[0].type=="float"||args[0].type=="int")
-              return {type:'float',value:_this.funcs.sinh(args[0].value)};
-            if(args[0].type=="complex"){
-              var a=args[0].value[0];
-              var b=args[0].value[1];
-              return {type:"complex",value:[_this.funcs.sinh(a)*Math.cos(b),_this.funcs.cosh(a)*Math.sin(b)]}
-            }
-          }}
-        }
-        ,'!cosh':{type:'func',value:{'native':true,func:function(args,_this){
-            if(!args[0]||!args[0])return{type:'null'};
-            if(args[0].type=="float"||args[0].type=="int")
-              return {type:'float',value:_this.funcs.cosh(args[0].value)};
-            if(args[0].type=="complex"){
-              var a=args[0].value[0];
-              var b=args[0].value[1];
-              return {type:"complex",value:[_this.funcs.cosh(a)*Math.cos(b),_this.funcs.sinh(a)*Math.sin(b)]}
-            }
-          }}
-        }
-        
-        
-        
-        ,'!int':{
-          type:'class',
-          name:'int',
-         // const:1,
-          value:{
-            constructor:{native:true,func:function(args,_this,scope,ops){
-              return (args[0]&&_this.forceType(args[0],'int'))||0;
-            }},
-            props:{
-              '!log':{type:'func',value:{native:true,func:function(args,_this,scope,self){
-                var data=self.data||{};
-                var th=data.this;
-                var x=1;
-                if(th)x=th.value;
-                return {
-                  type:'float'
-                  ,value:args[0]?Math.log(th.value)/Math.log(args[0].value):Math.log(th.value)}
-              }}}
-            },
-            statics:{},
-            toStr:{
-               type:'func'
-              ,value:{native:true
-              ,func:function(val){return val.toString();}
-            }}
-          }
-        },
-        '!float':{
-          type:'class',
-          name:'float',
-         // const:1,
-          value:{
-            'extends':null,
-            'implements':[],
-            constructor:{native:true,func:function(args,_this,scope,ops){
-              return (args[0]&&_this.forceType(args[0],'float'))||0;
-            }},
-            props:{
-              '!val':{type:'int',value:100}
-            },
-            statics:{
-              '!v':{type:'int',value:1000}
-            },
-            toStr:function(val){
-              val.toString();
-            }
-          }
-        },
-        '!complex':{
-          type:'class',
-          name:'complex',
-         // const:1,
-          value:{
-            'extends':null,
-            'implements':[],
-            constructor:{native:true,func:function(args,_this,scope,ops){
-              return (args[0]&&_this.forceType(args[0],'complex'))||[0,0];
-            }},
-            props:{
-              '!val':{type:'int',value:100}
-            },
-            statics:{
-              '!v':{type:'int',value:1000}
-            },
-            toStr:function(val){
-              val.toString();
-            }
-          }
-        },
-        '!string':{
-          type:'class',
-          name:'string',
-         // const:1,
-          value:{
-            'extends':null,
-            'implements':[],
-            constructor:{native:true,func:function(args,_this,scope,ops){
-              return (args[0]&&_this.forceType(args[0],'string'))||'';
-            }},
-            props:{
-              '!val':0
-            },
-            statics:{
-              '!v':{type:'int',value:10}
-            },
-            toStr:function(val){
-              val.toString();
-            }
-          }
-        },
-        '!boolean':{
-          type:'class',
-          name:'boolean',
-         // const:1,
-          value:{
-            'extends':null,
-            'implements':[],
-            constructor:{native:true,func:function(args,_this,scope,ops){
-              return (args[0]&&_this.forceType(args[0],'boolean'))||0;
-            }},
-            props:{
-              '!val':0
-            },
-            statics:{
-              '!v':{type:'int',value:10}
-            },
-            toStr:function(val){
-              val.toString();
-            }
-          }
-        },
-        '!struct':{
-          type:'class',
-          name:'struct',
-         // const:1,
-          value:{
-            'extends':null,
-            'implements':[],
-            constructor:{native:true,func:function(args,_this,scope,ops){
-              return {};
-            }},
-            props:{
-              '!val':0
-            },
-            statics:{
-              '!v':{type:'int',value:10}
-            },
-            toStr:function(val){
-              val.toString();
-            }
-          }
-        },
-        '!array':{
-          type:'class',
-          name:'array',
-         // const:1,
-          value:{
-            'extends':null,
-            'implements':[],
-            constructor:{native:true,func:function(args,_this,scope,ops){
-              return [];
-            }},
-            props:{
-              '!length':{type:'func',value:{native:true,func:function(args,_this,scope,self){
-                var data=self.data||{};
-                return {type:'int',value:data.this.value.length};
-              }}}
-              ,'!push':{type:'func',value:{native:true,func:function(args,_this,scope,self){
-                self.data.this.value.push(args[0]);
-                return self.data.this;
-              }}}
-            },
-            statics:{
-              '!v':{type:'int',value:10}
-            },
-            toStr:function(val){
-              val.toString();
-            }
-          }
-        },
-        '!func':{
-          type:'class',
-          name:'func',
-         // const:1,
-          value:{
-            'extends':null,
-            'implements':[],
-            constructor:{native:true,func:function(args,_this,scope,ops){
-              return {native:false,func:{args:[],code:[]}};
-              
-            }},
-            props:{
-              'val':0
-            },
-            statics:{
-              'v':{type:'int',value:10}
-            },
-            toStr:function(val){
-              val.toString();
-            }
-          }
-        },
-        0:{}
-      }
-  };
+    vars:this.clone(this.vars)
+  }
   this.operateFunction=function(args,_this,scope,ops){
     var a=args[0],b=args[1];
     var fs=ops.fs;
@@ -937,6 +643,7 @@ Diva.prototype={
     if(sc["!"+name])this.throw('ReferencesError','variable '+name+' is already defined');
     var cla=this.getVar(data.type,scope,{noerr:true});
     if(!cla)this.throw('ReferenceError','class '+data.type+' is not defined');
+    
     sc["!"+name]={type:data.type,name:name,value:this.runFunc(cla.value.constructor,[],scope)}
   }
   ,forceType:function(v,type){
@@ -952,27 +659,35 @@ Diva.prototype={
       rv={type:type,value:this.runFunc(vtchanger[type],[v])};
     }
     if(rv)return rv;
-    _this.throw("RuntimeError","変換出来ませんでした。");
+    _this.throw("RuntimeError","変換出来ませんでした。"+[v.type,v]);
   }
   
   ,isTrue:function(v){
     return this.forceType(v,'boolean').value==true;
   }
-  ,getProperty:function self(obj,pn,scope){
+  ,getProperty:function self(obj,pnraw,scope){
     var type=obj.type;
     var obp=null;
+    var pn=pnraw;
     if(type!="array")pn="!"+pn;
     if(type=="class"){
-      obp=(obj.value[type=="class"?"statics":"props"]||{})[pn]
+      obp=(obj.value.props||{})[pn]
     }else if(type=="struct"){
       if(!obj.value[pn])obj.value[pn]={type:'null'};
-      obp=(obj.value[pn].type!="null"&&obj.value[pn])||((this.getVar(type,scope).value||{}).props||{})[pn]||obj.value[pn];
+      obp=(obj.value[pn].type!="null"&&obj.value[pn])||this.getProperty(this.getVar(type,scope),pnraw)||obj.value[pn];
     }else if(type=="array"){
       if(pn*1!==pn*1)return ((this.getVar(type,scope).value||{}).props||{})["!"+pn]||{type:'null'};//非数字プロパティ
       if(!obj.value[pn])obj.value[pn]={type:'null'};
       obp=(obj.value[pn].type!="null"&&obj.value[pn])||((this.getVar(type,scope).value||{}).props||{})["!"+pn]||obj.value[pn];
     }else{
-      obp=((this.getVar(type,scope).value||{}).props||{})[pn];
+      var classObj=this.getVar(type,scope);
+      obp=((classObj.value||{}).props||{})[pn];
+      if(!obp&&Array.isArray(classObj.value.extends)){
+        for(var i in classObj.value.extends){
+          var ext=classObj.value.extends[i];
+          obp=this.getProperty(this.getVar(ext,scope),pnraw);
+        }
+      }
     }
     return obp||{type:'null'};
   }
@@ -1355,6 +1070,26 @@ Diva.prototype={
         stack.push({type:'int',value:v*1});
       }
     }else
+    if(v=="new"){
+      var next=parts[i+1];
+      if(classList.indexOf(next)+1){
+        parts[i+1]="";
+        stack.push({
+          type:'func',
+          value:{
+            native:true,
+            func:function(args,_this){
+              return {
+                type:next,
+                value:_this.runFunc(_this.getVar(next,scope).value.constructor,args,scope)
+              }
+            }
+          }
+        })
+      }else{
+        _this.throw('TypeError',"cannot new");
+      }
+    }else
     if(operators.indexOf(v)+1){
       if(DefProp==3){
         // variable.+
@@ -1615,4 +1350,316 @@ Diva.prototype={
   this.stderr+="Diva:"+errstr+"\n";
   throw errstr;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    ,vars:
+      {
+         '!null':{type:'null'}
+        ,'!true':{type:'boolean',value:true}
+        ,'!false':{type:'boolean',value:false}
+        ,'!NaN':{type:'int',value:NaN}
+        ,'!Infinity':{type:'int',value:1/0}
+        ,'!PI':{type:'float',value:Math.PI}
+        ,'!E':{type:'float',value:Math.E}
+        ,'!I':{type:'complex',value:[0,1]}
+        
+        
+        ,'!if':{type:'func',value:{rtype:"boolean",'native':true,func:function(args){var v=args[args.length-1];return v;}}}
+        ,'!alert':{type:'func',value:{rtype:"null",'native':true,func:function(args,_this){alert(args.map(function(i){return _this.toStr(i)}));}}}
+        ,'!print':{type:'func',value:{rtype:"null",'native':true,func:function(args,_this){
+            args.forEach(function(v){
+              _this.stdout+=_this.toStr(v)+"\n";
+            });}}
+        }
+        ,'!typeof':{type:'func',value:{rtype:"string",'native':true,func:function(args){return {type:"string",value:args[args.length-1].type}}}}
+        
+        
+        
+        ,'!sqrt':{type:'func',value:{'native':true,func:function(args,_this){
+            if(!args[0]||!args[0])return{type:'null'};
+            if(args[0].type=="float"||args[0].type=="int"){
+              var argv=args[0].value;
+              return argv<0?{type:'complex',value:[Math.sqrt(-argv),1]}:{type:'float',value:Math.sqrt(argv)};
+            }
+            if(args[0].type=="complex"){
+              var a=args[0].value[0];
+              var b=args[0].value[1];
+              var raabb=Math.sqrt(a*a+b*b);
+              return {type:"complex",value:[Math.sqrt((raabb+a)/2),Math.sqrt((raabb-a)/2)*(b<0?-1:1)]}
+            }
+          }}
+        }
+        ,'!log':{type:'func',value:{'native':true,func:function(args,_this){
+            if(!args[0]||!args[0])return{type:'null'};
+            if(args[0].type=="float"||args[0].type=="int"){
+              var argv=args[0].value;
+              return argv<0?{type:'complex',value:[Math.log(-argv),Math.PI]}:{type:'float',value:Math.log(argv)};
+            }
+            if(args[0].type=="complex"){
+              var a=args[0].value[0];
+              var b=args[0].value[1];
+              return {type:"complex",value:[Math.log(a*a+b*b)/2,a<0?(Math.PI-Math.atan(Math.abs(b/a)))*(b<0?-1:1):Math.atan(b/(a||0))]}
+            }
+          }}
+        }
+        ,'!sin':{type:'func',value:{'native':true,func:function(args,_this){
+            if(!args[0]||!args[0])return{type:'null'};
+            if(args[0].type=="float"||args[0].type=="int")
+              return {type:'float',value:Math.sin(args[0].value)};
+            if(args[0].type=="complex"){
+              var a=args[0].value[0];
+              var b=args[0].value[1];
+              return {type:"complex",value:[Math.sin(a)*_this.funcs.cosh(b),Math.cos(a)*_this.funcs.sinh(b)]}
+            }
+          }}
+        }
+        ,'!cos':{type:'func',value:{'native':true,func:function(args,_this){
+            if(!args[0]||!args[0])return{type:'null'};
+            if(args[0].type=="float"||args[0].type=="int")
+              return {type:'float',value:Math.cos(args[0].value)};
+            if(args[0].type=="complex"){
+              var a=args[0].value[0];
+              var b=args[0].value[1];
+              return {type:"complex",value:[Math.cos(a)*_this.funcs.cosh(b),-Math.sin(a)*_this.funcs.sinh(b)]}
+            }
+          }}
+        }
+        ,'!tan':{type:'func',value:{'native':true,func:function(args,_this){
+            if(!args[0]||!args[0])return{type:'null'};
+            if(args[0].type=="float"||args[0].type=="int")
+              return {type:'float',value:Math.tan(args[0].value)};
+            if(args[0].type=="complex"){
+              var a=args[0].value[0];
+              var b=args[0].value[1];
+              var bb=Math.cos(2*a)+_this.funcs.cosh(2*b); //分母
+              /*
+                tanx=(sin(2a)+isinh(2b))/(cos(2a)+cosh(2b))
+              */
+              return {type:"complex",value:[Math.sin(2*a)/bb,_this.funcs.sinh(2*b)/bb]}
+            }
+          }}
+        }
+        
+        ,'!sinh':{type:'func',value:{'native':true,func:function(args,_this){
+            if(!args[0]||!args[0])return{type:'null'};
+            if(args[0].type=="float"||args[0].type=="int")
+              return {type:'float',value:_this.funcs.sinh(args[0].value)};
+            if(args[0].type=="complex"){
+              var a=args[0].value[0];
+              var b=args[0].value[1];
+              return {type:"complex",value:[_this.funcs.sinh(a)*Math.cos(b),_this.funcs.cosh(a)*Math.sin(b)]}
+            }
+          }}
+        }
+        ,'!cosh':{type:'func',value:{'native':true,func:function(args,_this){
+            if(!args[0]||!args[0])return{type:'null'};
+            if(args[0].type=="float"||args[0].type=="int")
+              return {type:'float',value:_this.funcs.cosh(args[0].value)};
+            if(args[0].type=="complex"){
+              var a=args[0].value[0];
+              var b=args[0].value[1];
+              return {type:"complex",value:[_this.funcs.cosh(a)*Math.cos(b),_this.funcs.sinh(a)*Math.sin(b)]}
+            }
+          }}
+        }
+        
+        
+        
+        ,'!int':{
+          type:'class',
+          name:'int',
+         // const:1,
+          value:{
+            constructor:{native:true,func:function(args,_this,scope,ops){
+              return (args[0]&&_this.forceType(args[0],'int'))||0;
+            }},
+            props:{
+              '!log':{type:'func',value:{native:true,func:function(args,_this,scope,self){
+                var data=self.data||{};
+                var th=data.this;
+                var x=1;
+                if(th)x=th.value;
+                return {
+                  type:'float'
+                  ,value:args[0]?Math.log(th.value)/Math.log(args[0].value):Math.log(th.value)}
+              }}}
+            },
+            statics:{},
+            toStr:{
+               type:'func'
+              ,value:{native:true
+              ,func:function(val){return val.toString();}
+            }}
+          }
+        },
+        '!float':{
+          type:'class',
+          name:'float',
+         // const:1,
+          value:{
+            'extends':null,
+            'implements':[],
+            constructor:{native:true,func:function(args,_this,scope,ops){
+              return (args[0]&&_this.forceType(args[0],'float'))||0;
+            }},
+            props:{
+              '!val':{type:'int',value:100}
+            },
+            statics:{
+              '!v':{type:'int',value:1000}
+            },
+            toStr:function(val){
+              val.toString();
+            }
+          }
+        },
+        '!complex':{
+          type:'class',
+          name:'complex',
+         // const:1,
+          value:{
+            'extends':null,
+            'implements':[],
+            constructor:{native:true,func:function(args,_this,scope,ops){
+              return (args[0]&&_this.forceType(args[0],'complex'))||[0,0];
+            }},
+            props:{
+              '!val':{type:'int',value:100}
+            },
+            statics:{
+              '!v':{type:'int',value:1000}
+            },
+            toStr:function(val){
+              val.toString();
+            }
+          }
+        },
+        '!string':{
+          type:'class',
+          name:'string',
+         // const:1,
+          value:{
+            'extends':null,
+            'implements':[],
+            constructor:{native:true,func:function(args,_this,scope,ops){
+              return (args[0]&&_this.forceType(args[0],'string'))||'';
+            }},
+            props:{
+              '!val':0
+            },
+            statics:{
+              '!v':{type:'int',value:10}
+            },
+            toStr:function(val){
+              val.toString();
+            }
+          }
+        },
+        '!boolean':{
+          type:'class',
+          name:'boolean',
+         // const:1,
+          value:{
+            'extends':null,
+            'implements':[],
+            constructor:{native:true,func:function(args,_this,scope,ops){
+              return (args[0]&&_this.forceType(args[0],'boolean'))||0;
+            }},
+            props:{
+              '!val':0
+            },
+            statics:{
+              '!v':{type:'int',value:10}
+            },
+            toStr:function(val){
+              val.toString();
+            }
+          }
+        },
+        '!struct':{
+          type:'class',
+          name:'struct',
+         // const:1,
+          value:{
+            'extends':null,
+            'implements':[],
+            constructor:{native:true,func:function(args,_this,scope,ops){
+              return {};
+            }},
+            props:{
+              '!val':{type:'int',value:10}
+            },
+            statics:{
+              '!v':{type:'int',value:10}
+            },
+            toStr:function(val){
+              val.toString();
+            }
+          }
+        },
+        '!array':{
+          type:'class',
+          name:'array',
+         // const:1,
+          value:{
+            'extends':null,
+            'implements':[],
+            constructor:{native:true,func:function(args,_this,scope,ops){
+              return [];
+            }},
+            props:{
+              '!length':{type:'func',value:{native:true,func:function(args,_this,scope,self){
+                var data=self.data||{};
+                return {type:'int',value:data.this.value.length};
+              }}}
+              ,'!push':{type:'func',value:{native:true,func:function(args,_this,scope,self){
+                self.data.this.value.push(args[0]);
+                return self.data.this;
+              }}}
+            },
+            statics:{
+              '!v':{type:'int',value:10}
+            },
+            toStr:function(val){
+              val.toString();
+            }
+          }
+        },
+        '!func':{
+          type:'class',
+          name:'func',
+         // const:1,
+          value:{
+            'extends':null,
+            'implements':[],
+            constructor:{native:true,func:function(args,_this,scope,ops){
+              return {native:false,func:{args:[],code:[]}};
+              
+            }},
+            props:{
+              'val':0
+            },
+            statics:{
+              'v':{type:'int',value:10}
+            },
+            toStr:function(val){
+              val.toString();
+            }
+          }
+        },
+        0:{}
+      }
 };
