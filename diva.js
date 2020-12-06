@@ -47,455 +47,7 @@ var Diva=function(code){
   };
   this.grammar={
     symbol:['+','-','*','/','%','=','.',',','<','>','?','!',':','{','}','[',']','(',')','#','&','|','^',';','\\',"@",'~'],
-    operator:[/*
-      "operatorName":{
-        int type: flag
-        [:
-          = += ...->000(0)  (x=y)
-          ? op    ->001(1)  (x++)
-          ? op ?  ->010(2)  (x+y)
-            op ?  ->100(4)  (!x)
-          ([?]) op ([?]) -> -(n)
-        ]
-        boolean native: isNativeFunction
-        func func:function(args :array, _this :instance ,ops : {})
-      }
-    */
-      {
-        "=":{
-          type:0,
-          'native':true,
-          func:function(args,_this){
-            var a=args[0],b=args[1];
-            if(a.const){
-              if(a.const==2)a.const--;
-              else _this.throw("ReferenceError",a.name+" is constant");
-            }
-            if(a.type==b.type){
-            a.value=b.value;
-            }
-            else if(a.type=="null"){
-              a.type=b.type;
-              a.value=b.value;
-            }else{
-              a.value=_this.forceType(b,a.type).value;
-            }
-            return a;
-          }
-        },
-        "+=":{
-          type:0,
-          'native':true,
-          func:function(args,_this,scope){
-            var plus=_this.searchOperator('+')[1];
-            var equal=_this.searchOperator('=')[1];
-            var pl=_this.runFunc(plus,args,scope);
-            return _this.runFunc(equal,[args[0],pl],scope);
-          }
-        },
-        "-=":{
-          type:0,
-          'native':true,
-          func:function(args,_this,scope){
-            var plus=_this.searchOperator('-')[1];
-            var equal=_this.searchOperator('=')[1];
-            var pl=_this.runFunc(plus,args,scope);
-            return _this.runFunc(equal,[args[0],pl],scope);
-          }
-        }
-      },//代入演算子(最優先)
-      {
-        ".":{
-          type:-2,
-          'native':true,
-          func:function(args,_this,scope){
-            var a=args[0],b=args[1];
-            var obj=_this.getProperty(a,b);
-            if(obj.type=="func"){
-              obj=_this.clone(obj);
-              obj.value=obj.value||{};
-              obj.value.data=obj.data||{};
-              obj.value.data.this=a;
-            }
-            return obj;
-          }
-        },
-        "[ ]":{
-          type:2,
-          'native':true,
-          func:function(args,_this,scope){
-            var a=args[0],b=args[1];
-            var obj=_this.getProperty(a,b.value);
-            if(obj.type=="func"){
-              obj=_this.clone(obj);
-              obj.value=obj.value||{};
-              obj.value.data=obj.data||{};
-              obj.value.data.this=a;
-            }
-            return obj;
-          }
-        },
-        "::":{
-          type:-2,
-          'native':true,
-          func:function(args,_this,scope){
-            var a=args[0],b=args[1];
-            var cl=_this.getVar(a.type,scope);
-            var st=_this.getProperty(cl,b);
-            
-            return st;
-          }
-        },
-        "=":{ //関数呼び出し演算子(一時演算子)
-          type:2,
-          'native':true,
-          list:true,
-          func:function(args,_this,scope){
-            
-            var a=args[0],b=args[1];
-            
-            if(a.type!="func")_this.throw("TypeError",a.name+" is not a function");
-            return _this.runFunc(a.value,b,scope);
-          }
-        }
-      },
-      {
-        "++":{
-          type:1+4,
-          native:true,
-          func:function(args,_this,scope){
-            if(args[0]){//x++;
-              var plus=_this.searchOperator('+=')[1];
-              var rt=_this.clone(args[0]);
-              var pl=_this.runFunc(plus,[args[0],{type:'int',value:1}],scope);
-              return rt;
-            }else{
-              var plus=_this.searchOperator('+=')[1];
-              var pl=_this.runFunc(plus,[args[1],{type:'int',value:1}],scope);
-              return pl;
-            }
-          }
-        }
-        ,"--":{
-          type:1+4,
-          native:true,
-          func:function(args,_this,scope){
-            if(args[0]){//x--;
-              var minus=_this.searchOperator('-=')[1];
-              var rt=_this.clone(args[0]);
-              var pl=_this.runFunc(minus,[args[0],{type:'int',value:1}],scope);
-              return rt;
-            }else{
-              var minus=_this.searchOperator('-=')[1];
-              var pl=_this.runFunc(minus,[args[1],{type:'int',value:1}],scope);
-              return pl;
-            }
-          }
-        }
-      },
-      {
-        "**":{
-          type:2,
-          'native':true,
-          func:this.operateFunction,
-          'fs':{
-            '[consider]':{
-              null:{native:true,func:function(){return {type:'int',value:0}}}
-              ,int:{native:true,func:function(v){return {type:'float',value:v}}}
-            }
-            ,'[others]':{native:true,func:function(){}}
-           /* ,'int':{
-               'int':{native:true,func:function(args){return {type:'int',value:Math.pow(args[0],args[1])}}}
-              ,'float':{native:true,func:function(args){return {type:'float',value:Math.pow(args[0],args[1])}}}
-            }*/
-            ,'float':{
-              'int':{native:true,func:function(args){return {type:'float',value:Math.pow(args[0],args[1])}}}
-              ,'float':{native:true,func:function(args){return {type:'float',value:Math.pow(args[0],args[1])}}}
-            }
-            ,'string':{
-              'int':{native:true,func:function(args){return {type:'string',value:Math.pow(args[0],args[1])}}}
-            }
-            ,'complex':{
-              'int':{native:true,func:function(args,_this,scope){
-                var multi=_this.searchOperator('*')[1];
-                var c={type:'complex',value:[1,0]};
-                var a={type:'complex',value:args[0]};
-                var max=args[1];
-                var min=max<0;
-                max=Math.abs(max);
-                for(var i=0;i<max;i++)
-                  c=_this.runFunc(multi,[c,a],scope);//c*=a
-                return min?1/c:c;
-              }}
-            }
-          }
-        }
-      },
-      {
-        "*":{
-          type:2,
-          'native':true,
-          func:this.operateFunction,
-          'fs':{
-            '[consider]':{
-              null:{native:true,func:function(){return {type:'int',value:0}}}
-            }
-            ,'[others]':{native:true,func:function(){}}
-            ,'int':{
-               'int':{native:true,func:function(args){return {type:'int',value:args[0]*args[1]}}}
-              ,'float':{native:true,func:function(args){return {type:'float',value:args[0]*args[1]}}}
-              ,'complex':{native:true,func:function(args){return {type:'complex',value:[args[1][0]*args[0],args[1][1]*args[0]]}}}
-            }
-            ,'float':{
-              'int':{native:true,func:function(args){return {type:'float',value:args[0]*args[1]}}}
-              ,'float':{native:true,func:function(args){return {type:'float',value:args[0]*args[1]}}}
-              ,'complex':{native:true,func:function(args){return {type:'complex',value:[args[1][0]*args[0],args[1][1]*args[0]]}}}
-            }
-            ,'complex':{
-              'int':{native:true,func:function(args){return {type:'complex',value:[args[0][0]*args[1],args[0][1]*args[1]]}}}
-              ,'float':{native:true,func:function(args){return {type:'complex',value:[args[0][0]*args[1],args[0][1]*args[1]]}}}
-              ,'complex':{native:true,func:function(args){
-                var a=args[0][0];
-                var b=args[0][1];
-                var c=args[1][0];
-                var d=args[1][1];
-                return {type:'complex',value:[a*c-b*d,a*d+b*c]}
-              }}
-            }
-            ,'string':{
-              'int':{native:true,func:function(args){return {type:'string',value:(function(i){var rs="";while(i-->0){rs+=args[0]}return rs})(args[1])}}}
-            }
-          }
-        },
-        "/":{
-          type:2,
-          'native':true,
-          func:this.operateFunction,
-          'fs':{
-            '[consider]':{
-              null:{native:true,func:function(){return {type:'float',value:0}}}
-              ,int:{native:true,func:function(v){return {type:'float',value:v}}}
-            }
-            ,'[others]':{native:true,func:function(){}}
-            /*,'int':{
-               'int':{native:true,func:function(args){return {type:'int',value:args[0]/args[1]}}}
-              ,'float':{native:true,func:function(args){return {type:'float',value:args[0]/args[1]}}}
-            }*/
-            ,'float':{
-              'int':{native:true,func:function(args){return {type:'float',value:args[0]/args[1]}}}
-              ,'float':{native:true,func:function(args){return {type:'float',value:args[0]/args[1]}}}
-              ,'complex':{native:true,func:function(args){
-                var a=args[0];
-                var c=args[1][0];
-                var d=args[1][1];
-                return {type:'complex',value:[(a*c)/(c*c+d*d),(-a*d)/(c*c+d*d)]}
-              }}
-              
-            }
-            ,'string':{
-              'int':{native:true,$func:function(args){return {type:'string',value:(function(i){var rs="";while(i-->0){rs+=args[0]}return rs})(args[1])}}}
-            }
-            ,'complex':{
-               'int':{native:true,func:function(args){return {type:'complex',value:[args[0][0]/args[1],args[0][1]/args[1]]}}}
-               ,'float':{native:true,func:function(args){return {type:'complex',value:[args[0][0]/args[1],args[0][1]/args[1]]}}}
-               ,'complex':{native:true,func:function(args){
-                var a=args[0][0];
-                var b=args[0][1];
-                var c=args[1][0];
-                var d=args[1][1];
-                return {type:'complex',value:[(a*c+b*d)/(c*c+d*d),(b*c-a*d)/(c*c+d*d)]}
-              }}
-            }
-          }
-        }
-      },
-      {
-        "%":{
-          type:2+4,
-          'native':true,
-          func:this.operateFunction,
-          'fs':{
-            '[consider]':{
-              null:{native:true,func:function(){return {type:'int',value:0}}}
-            }
-            ,'[others]':{native:true,func:function(){}}
-            ,'int':{
-               'int':{native:true,func:function(args){return {type:'int',value:args[0]%args[1]}}}
-              ,'float':{native:true,func:function(args){return {type:'float',value:args[0]%args[1]}}}
-              ,'string':{native:true,func:function(args){return {type:'string',value:args[0]%args[1]}}}
-            }
-            ,'float':{
-              'int':{native:true,func:function(args){return {type:'float',value:args[0]%args[1]}}}
-              ,'float':{native:true,func:function(args){return {type:'float',value:args[0]%args[1]}}}
-            }
-            ,'string':{
-              'int':{native:true,func:function(args){return {type:'string',value:args[0]%args[1]}}}
-              ,'string':{native:true,func:function(args){return {type:'string',value:args[0]%args[1]}}}
-            }
-          }
-        },
-      },  
-      {
-        "+":{
-          type:2+4,
-          'native':true,
-          func:this.operateFunction,
-          'fs':{
-            '[consider]':{
-              null:{native:true,func:function(){return {type:'int',value:0}}}
-            }
-            ,'[others]':{native:true,func:function(){}}
-            ,'[none]':{
-              'int':{native:true,func:function(args){return {type:'int',value:args[1]}}}
-              ,'float':{native:true,func:function(args){return {type:'float',value:args[1]}}}
-              ,'complex':{native:true,func:function(args){return {type:'complex',value:args[1]}}}
-            }
-            ,'int':{
-               'int':{native:true,func:function(args){return {type:'int',value:args[0]+args[1]}}}
-              ,'float':{native:true,func:function(args){return {type:'float',value:args[0]+args[1]}}}
-              ,'complex':{native:true,func:function(args){return {type:'complex',value:[args[0]+args[1][0],args[1][1]]}}}
-              ,'string':{native:true,func:function(args){return {type:'string',value:args[0]+args[1]}}}
-            }
-            ,'float':{
-              'int':{native:true,func:function(args){return {type:'float',value:args[0]+args[1]}}}
-              ,'float':{native:true,func:function(args){return {type:'float',value:args[0]+args[1]}}}
-              ,'complex':{native:true,func:function(args){return {type:'complex',value:[args[0]+args[1][0],args[1][1]]}}}
-              ,'string':{native:true,func:function(args){return {type:'string',value:args[0]+args[1]}}}
-            }
-            ,'complex':{
-              'int':{native:true,func:function(args){return {type:'complex',value:[args[0][0]+args[1],args[0][1]]}}}
-              ,'float':{native:true,func:function(args){return {type:'complex',value:[args[0][0]+args[1],args[0][1]]}}}
-              ,'complex':{native:true,func:function(args){return {type:'complex',value:[args[0][0]+args[1][0],args[0][1]+args[1][1]]}}}
-              ,'string':{native:true,func:function(args,_this){return {type:'string',value:_this.toStr({type:'complex',value:args[0]})+args[1]}}}
-            }
-            ,'string':{
-              'int':{native:true,func:function(args){return {type:'string',value:args[0]+args[1]}}}
-              ,'float':{native:true,func:function(args){return {type:'string',value:args[0]+args[1]}}}
-              ,'complex':{native:true,func:function(args,_this){return {type:'string',value:args[0]+_this.toStr({type:'complex',value:args[1]})}}}
-              ,'string':{native:true,func:function(args){return {type:'string',value:args[0]+args[1]}}}
-              ,'boolean':{native:true,func:function(args){return {type:'string',value:args[0]+args[1]}}}
-            }
-          }
-        },
-        "-":{
-          type:2+4,
-          'native':true,
-          func:this.operateFunction
-          ,'fs':{
-            '[consider]':{
-              null:{native:true,func:function(){return {type:'int',value:0}}}
-            }
-            ,'[others]':{native:true,func:function(){}}
-            ,'[none]':{
-              'int':{native:true,func:function(args){return {type:'int',value:-args[1]}}}
-              ,'float':{native:true,func:function(args){return {type:'float',value:-args[1]}}}
-              ,'complex':{native:true,func:function(args){return {type:'complex',value:[-args[1][0],-args[1][1]]}}}
-            }
-            ,'int':{
-               'int':{native:true,func:function(args){return {type:'int',value:args[0]-args[1]}}}
-              ,'float':{native:true,func:function(args){return {type:'float',value:args[0]-args[1]}}}
-              ,'complex':{native:true,func:function(args){return {type:'complex',value:[args[0]-args[1][0],-args[1][1]]}}}
-            }
-            ,'float':{
-              'int':{native:true,func:function(args){return {type:'float',value:args[0]-args[1]}}}
-              ,'float':{native:true,func:function(args){return {type:'float',value:args[0]-args[1]}}}
-              ,'complex':{native:true,func:function(args){return {type:'complex',value:[args[0]-args[1][0],-args[1][1]]}}}
-            }
-            ,'complex':{
-              'int':{native:true,func:function(args){return {type:'complex',value:[args[0][0]-args[1],args[0][1]]}}}
-              ,'float':{native:true,func:function(args){return {type:'complex',value:[args[0][0]-args[1],args[0][1]]}}}
-              ,'complex':{native:true,func:function(args){return {type:'complex',value:[args[0][0]-args[1][0],args[0][1]-args[1][1]]}}}
-            }
-            ,'string':{
-              'int':{native:true,func:function(args){return {type:'string',value:args[0]-args[1]}}}
-              ,'string':{native:true,func:function(args){return {type:'string',value:args[0]-args[1]}}}
-            }
-          }
-        }
-      },
-      {
-        "==":{
-          type:2,
-          'native':true,
-          func:this.operateFunction,
-          'fs':{
-            '[consider]':{
-              null:{native:true,func:function(){return {type:'int',value:0}}}
-            }
-            ,'[others]':{
-              '[others]':{native:true,func:function(args){return {type:'boolean',value:args[0]==args[1]}}}
-            }
-            ,'int':{
-               'int':{native:true,func:function(args){return {type:'boolean',value:args[0]==args[1]}}}
-              ,'float':{native:true,func:function(args){return {type:'boolean',value:args[0]==args[1]}}}
-            }
-            ,'float':{
-              'int':{native:true,func:function(args){return {type:'boolean',value:args[0]==args[1]}}}
-              ,'float':{native:true,func:function(args){return {type:'boolean',value:args[0]==args[1]}}}
-            }
-            
-          }
-        }
-        ,"<":{
-          type:2,
-          'native':true,
-          func:this.operateFunction,
-          'fs':{
-            '[consider]':{
-              null:{native:true,func:function(){return {type:'int',value:0}}}
-            }
-            ,'[others]':{
-              '[others]':{native:true,func:function(){}}
-            }
-            ,'int':{
-               'int':{native:true,func:function(args){return {type:'boolean',value:args[0]<args[1]}}}
-              ,'float':{native:true,func:function(args){return {type:'boolean',value:args[0]<args[1]}}}
-            }
-            ,'float':{
-              'int':{native:true,func:function(args){return {type:'boolean',value:args[0]<args[1]}}}
-              ,'float':{native:true,func:function(args){return {type:'boolean',value:args[0]<args[1]}}}
-            }
-          }
-        }
-        ,">":{
-          type:2,
-          'native':true,
-          func:this.operateFunction,
-          'fs':{
-            '[consider]':{
-              null:{native:true,func:function(){return {type:'int',value:0}}}
-            }
-            ,'[others]':{
-              '[others]':{native:true,func:function(){}}
-            }
-            ,'int':{
-               'int':{native:true,func:function(args){return {type:'boolean',value:args[0]>args[1]}}}
-              ,'float':{native:true,func:function(args){return {type:'boolean',value:args[0]>args[1]}}}
-            }
-            ,'float':{
-              'int':{native:true,func:function(args){return {type:'boolean',value:args[0]>args[1]}}}
-              ,'float':{native:true,func:function(args){return {type:'boolean',value:args[0]>args[1]}}}
-            }
-          }
-        }
-      },
-      {
-        "||":{
-          type:2,
-          'native':true,
-          func:function(args,_this){
-            return _this.isTrue(args[0])?args[0]:args[1];
-          }
-        }
-        ,"&&":{
-          type:2,
-          'native':true,
-          func:function(args,_this){
-            return _this.isTrue(args[0])?args[1]:args[0];
-          }
-        }
-      }
-    ]
+    operator:this.clone(this.grammar.operator)
   };
   this.toType={
     '[to]':{
@@ -1364,7 +916,467 @@ Diva.prototype={
 
 
 
-
+    
+    
+    
+    
+    
+  ,grammar:{
+    operator:[/*
+      "operatorName":{
+        int type: flag
+        [:
+          = += ...->000(0)  (x=y)
+          ? op    ->001(1)  (x++)
+          ? op ?  ->010(2)  (x+y)
+            op ?  ->100(4)  (!x)
+          ([?]) op ([?]) -> -(n)
+        ]
+        boolean native: isNativeFunction
+        func func:function(args :array, _this :instance ,ops : {})
+      }
+    */
+      {
+        "=":{
+          type:0,
+          'native':true,
+          func:function(args,_this){
+            var a=args[0],b=args[1];
+            if(a.const){
+              if(a.const==2)a.const--;
+              else _this.throw("ReferenceError",a.name+" is constant");
+            }
+            if(a.type==b.type){
+            a.value=b.value;
+            }
+            else if(a.type=="null"){
+              a.type=b.type;
+              a.value=b.value;
+            }else{
+              a.value=_this.forceType(b,a.type).value;
+            }
+            return a;
+          }
+        },
+        "+=":{
+          type:0,
+          'native':true,
+          func:function(args,_this,scope){
+            var plus=_this.searchOperator('+')[1];
+            var equal=_this.searchOperator('=')[1];
+            var pl=_this.runFunc(plus,args,scope);
+            return _this.runFunc(equal,[args[0],pl],scope);
+          }
+        },
+        "-=":{
+          type:0,
+          'native':true,
+          func:function(args,_this,scope){
+            var plus=_this.searchOperator('-')[1];
+            var equal=_this.searchOperator('=')[1];
+            var pl=_this.runFunc(plus,args,scope);
+            return _this.runFunc(equal,[args[0],pl],scope);
+          }
+        }
+      },//代入演算子(最優先)
+      {
+        ".":{
+          type:-2,
+          'native':true,
+          func:function(args,_this,scope){
+            var a=args[0],b=args[1];
+            var obj=_this.getProperty(a,b);
+            if(obj.type=="func"){
+              obj=_this.clone(obj);
+              obj.value=obj.value||{};
+              obj.value.data=obj.data||{};
+              obj.value.data.this=a;
+            }
+            return obj;
+          }
+        },
+        "[ ]":{
+          type:2,
+          'native':true,
+          func:function(args,_this,scope){
+            var a=args[0],b=args[1];
+            var obj=_this.getProperty(a,b.value);
+            if(obj.type=="func"){
+              obj=_this.clone(obj);
+              obj.value=obj.value||{};
+              obj.value.data=obj.data||{};
+              obj.value.data.this=a;
+            }
+            return obj;
+          }
+        },
+        "::":{
+          type:-2,
+          'native':true,
+          func:function(args,_this,scope){
+            var a=args[0],b=args[1];
+            var cl=_this.getVar(a.type,scope);
+            var st=_this.getProperty(cl,b);
+            
+            return st;
+          }
+        },
+        "=":{ //関数呼び出し演算子(一時演算子)
+          type:2,
+          'native':true,
+          list:true,
+          func:function(args,_this,scope){
+            
+            var a=args[0],b=args[1];
+            
+            if(a.type!="func")_this.throw("TypeError",a.name+" is not a function");
+            return _this.runFunc(a.value,b,scope);
+          }
+        }
+      },
+      {
+        "++":{
+          type:1+4,
+          native:true,
+          func:function(args,_this,scope){
+            if(args[0]){//x++;
+              var plus=_this.searchOperator('+=')[1];
+              var rt=_this.clone(args[0]);
+              var pl=_this.runFunc(plus,[args[0],{type:'int',value:1}],scope);
+              return rt;
+            }else{
+              var plus=_this.searchOperator('+=')[1];
+              var pl=_this.runFunc(plus,[args[1],{type:'int',value:1}],scope);
+              return pl;
+            }
+          }
+        }
+        ,"--":{
+          type:1+4,
+          native:true,
+          func:function(args,_this,scope){
+            if(args[0]){//x--;
+              var minus=_this.searchOperator('-=')[1];
+              var rt=_this.clone(args[0]);
+              var pl=_this.runFunc(minus,[args[0],{type:'int',value:1}],scope);
+              return rt;
+            }else{
+              var minus=_this.searchOperator('-=')[1];
+              var pl=_this.runFunc(minus,[args[1],{type:'int',value:1}],scope);
+              return pl;
+            }
+          }
+        }
+      },
+      {
+        "**":{
+          type:2,
+          'native':true,
+          func:this.operateFunction,
+          'fs':{
+            '[consider]':{
+              null:{native:true,func:function(){return {type:'int',value:0}}}
+              ,int:{native:true,func:function(v){return {type:'float',value:v}}}
+            }
+            ,'[others]':{native:true,func:function(){}}
+           /* ,'int':{
+               'int':{native:true,func:function(args){return {type:'int',value:Math.pow(args[0],args[1])}}}
+              ,'float':{native:true,func:function(args){return {type:'float',value:Math.pow(args[0],args[1])}}}
+            }*/
+            ,'float':{
+              'int':{native:true,func:function(args){return {type:'float',value:Math.pow(args[0],args[1])}}}
+              ,'float':{native:true,func:function(args){return {type:'float',value:Math.pow(args[0],args[1])}}}
+            }
+            ,'string':{
+              'int':{native:true,func:function(args){return {type:'string',value:Math.pow(args[0],args[1])}}}
+            }
+            ,'complex':{
+              'int':{native:true,func:function(args,_this,scope){
+                var multi=_this.searchOperator('*')[1];
+                var c={type:'complex',value:[1,0]};
+                var a={type:'complex',value:args[0]};
+                var max=args[1];
+                var min=max<0;
+                max=Math.abs(max);
+                for(var i=0;i<max;i++)
+                  c=_this.runFunc(multi,[c,a],scope);//c*=a
+                return min?1/c:c;
+              }}
+            }
+          }
+        }
+      },
+      {
+        "*":{
+          type:2,
+          'native':true,
+          func:this.operateFunction,
+          'fs':{
+            '[consider]':{
+              null:{native:true,func:function(){return {type:'int',value:0}}}
+            }
+            ,'[others]':{native:true,func:function(){}}
+            ,'int':{
+               'int':{native:true,func:function(args){return {type:'int',value:args[0]*args[1]}}}
+              ,'float':{native:true,func:function(args){return {type:'float',value:args[0]*args[1]}}}
+              ,'complex':{native:true,func:function(args){return {type:'complex',value:[args[1][0]*args[0],args[1][1]*args[0]]}}}
+            }
+            ,'float':{
+              'int':{native:true,func:function(args){return {type:'float',value:args[0]*args[1]}}}
+              ,'float':{native:true,func:function(args){return {type:'float',value:args[0]*args[1]}}}
+              ,'complex':{native:true,func:function(args){return {type:'complex',value:[args[1][0]*args[0],args[1][1]*args[0]]}}}
+            }
+            ,'complex':{
+              'int':{native:true,func:function(args){return {type:'complex',value:[args[0][0]*args[1],args[0][1]*args[1]]}}}
+              ,'float':{native:true,func:function(args){return {type:'complex',value:[args[0][0]*args[1],args[0][1]*args[1]]}}}
+              ,'complex':{native:true,func:function(args){
+                var a=args[0][0];
+                var b=args[0][1];
+                var c=args[1][0];
+                var d=args[1][1];
+                return {type:'complex',value:[a*c-b*d,a*d+b*c]}
+              }}
+            }
+            ,'string':{
+              'int':{native:true,func:function(args){return {type:'string',value:(function(i){var rs="";while(i-->0){rs+=args[0]}return rs})(args[1])}}}
+            }
+          }
+        },
+        "/":{
+          type:2,
+          'native':true,
+          func:this.operateFunction,
+          'fs':{
+            '[consider]':{
+              null:{native:true,func:function(){return {type:'float',value:0}}}
+              ,int:{native:true,func:function(v){return {type:'float',value:v}}}
+            }
+            ,'[others]':{native:true,func:function(){}}
+            /*,'int':{
+               'int':{native:true,func:function(args){return {type:'int',value:args[0]/args[1]}}}
+              ,'float':{native:true,func:function(args){return {type:'float',value:args[0]/args[1]}}}
+            }*/
+            ,'float':{
+              'int':{native:true,func:function(args){return {type:'float',value:args[0]/args[1]}}}
+              ,'float':{native:true,func:function(args){return {type:'float',value:args[0]/args[1]}}}
+              ,'complex':{native:true,func:function(args){
+                var a=args[0];
+                var c=args[1][0];
+                var d=args[1][1];
+                return {type:'complex',value:[(a*c)/(c*c+d*d),(-a*d)/(c*c+d*d)]}
+              }}
+              
+            }
+            ,'string':{
+              'int':{native:true,$func:function(args){return {type:'string',value:(function(i){var rs="";while(i-->0){rs+=args[0]}return rs})(args[1])}}}
+            }
+            ,'complex':{
+               'int':{native:true,func:function(args){return {type:'complex',value:[args[0][0]/args[1],args[0][1]/args[1]]}}}
+               ,'float':{native:true,func:function(args){return {type:'complex',value:[args[0][0]/args[1],args[0][1]/args[1]]}}}
+               ,'complex':{native:true,func:function(args){
+                var a=args[0][0];
+                var b=args[0][1];
+                var c=args[1][0];
+                var d=args[1][1];
+                return {type:'complex',value:[(a*c+b*d)/(c*c+d*d),(b*c-a*d)/(c*c+d*d)]}
+              }}
+            }
+          }
+        }
+      },
+      {
+        "%":{
+          type:2+4,
+          'native':true,
+          func:this.operateFunction,
+          'fs':{
+            '[consider]':{
+              null:{native:true,func:function(){return {type:'int',value:0}}}
+            }
+            ,'[others]':{native:true,func:function(){}}
+            ,'int':{
+               'int':{native:true,func:function(args){return {type:'int',value:args[0]%args[1]}}}
+              ,'float':{native:true,func:function(args){return {type:'float',value:args[0]%args[1]}}}
+              ,'string':{native:true,func:function(args){return {type:'string',value:args[0]%args[1]}}}
+            }
+            ,'float':{
+              'int':{native:true,func:function(args){return {type:'float',value:args[0]%args[1]}}}
+              ,'float':{native:true,func:function(args){return {type:'float',value:args[0]%args[1]}}}
+            }
+            ,'string':{
+              'int':{native:true,func:function(args){return {type:'string',value:args[0]%args[1]}}}
+              ,'string':{native:true,func:function(args){return {type:'string',value:args[0]%args[1]}}}
+            }
+          }
+        },
+      },  
+      {
+        "+":{
+          type:2+4,
+          'native':true,
+          func:this.operateFunction,
+          'fs':{
+            '[consider]':{
+              null:{native:true,func:function(){return {type:'int',value:0}}}
+            }
+            ,'[others]':{native:true,func:function(){}}
+            ,'[none]':{
+              'int':{native:true,func:function(args){return {type:'int',value:args[1]}}}
+              ,'float':{native:true,func:function(args){return {type:'float',value:args[1]}}}
+              ,'complex':{native:true,func:function(args){return {type:'complex',value:args[1]}}}
+            }
+            ,'int':{
+               'int':{native:true,func:function(args){return {type:'int',value:args[0]+args[1]}}}
+              ,'float':{native:true,func:function(args){return {type:'float',value:args[0]+args[1]}}}
+              ,'complex':{native:true,func:function(args){return {type:'complex',value:[args[0]+args[1][0],args[1][1]]}}}
+              ,'string':{native:true,func:function(args){return {type:'string',value:args[0]+args[1]}}}
+            }
+            ,'float':{
+              'int':{native:true,func:function(args){return {type:'float',value:args[0]+args[1]}}}
+              ,'float':{native:true,func:function(args){return {type:'float',value:args[0]+args[1]}}}
+              ,'complex':{native:true,func:function(args){return {type:'complex',value:[args[0]+args[1][0],args[1][1]]}}}
+              ,'string':{native:true,func:function(args){return {type:'string',value:args[0]+args[1]}}}
+            }
+            ,'complex':{
+              'int':{native:true,func:function(args){return {type:'complex',value:[args[0][0]+args[1],args[0][1]]}}}
+              ,'float':{native:true,func:function(args){return {type:'complex',value:[args[0][0]+args[1],args[0][1]]}}}
+              ,'complex':{native:true,func:function(args){return {type:'complex',value:[args[0][0]+args[1][0],args[0][1]+args[1][1]]}}}
+              ,'string':{native:true,func:function(args,_this){return {type:'string',value:_this.toStr({type:'complex',value:args[0]})+args[1]}}}
+            }
+            ,'string':{
+              'int':{native:true,func:function(args){return {type:'string',value:args[0]+args[1]}}}
+              ,'float':{native:true,func:function(args){return {type:'string',value:args[0]+args[1]}}}
+              ,'complex':{native:true,func:function(args,_this){return {type:'string',value:args[0]+_this.toStr({type:'complex',value:args[1]})}}}
+              ,'string':{native:true,func:function(args){return {type:'string',value:args[0]+args[1]}}}
+              ,'boolean':{native:true,func:function(args){return {type:'string',value:args[0]+args[1]}}}
+            }
+          }
+        },
+        "-":{
+          type:2+4,
+          'native':true,
+          func:this.operateFunction
+          ,'fs':{
+            '[consider]':{
+              null:{native:true,func:function(){return {type:'int',value:0}}}
+            }
+            ,'[others]':{native:true,func:function(){}}
+            ,'[none]':{
+              'int':{native:true,func:function(args){return {type:'int',value:-args[1]}}}
+              ,'float':{native:true,func:function(args){return {type:'float',value:-args[1]}}}
+              ,'complex':{native:true,func:function(args){return {type:'complex',value:[-args[1][0],-args[1][1]]}}}
+            }
+            ,'int':{
+               'int':{native:true,func:function(args){return {type:'int',value:args[0]-args[1]}}}
+              ,'float':{native:true,func:function(args){return {type:'float',value:args[0]-args[1]}}}
+              ,'complex':{native:true,func:function(args){return {type:'complex',value:[args[0]-args[1][0],-args[1][1]]}}}
+            }
+            ,'float':{
+              'int':{native:true,func:function(args){return {type:'float',value:args[0]-args[1]}}}
+              ,'float':{native:true,func:function(args){return {type:'float',value:args[0]-args[1]}}}
+              ,'complex':{native:true,func:function(args){return {type:'complex',value:[args[0]-args[1][0],-args[1][1]]}}}
+            }
+            ,'complex':{
+              'int':{native:true,func:function(args){return {type:'complex',value:[args[0][0]-args[1],args[0][1]]}}}
+              ,'float':{native:true,func:function(args){return {type:'complex',value:[args[0][0]-args[1],args[0][1]]}}}
+              ,'complex':{native:true,func:function(args){return {type:'complex',value:[args[0][0]-args[1][0],args[0][1]-args[1][1]]}}}
+            }
+            ,'string':{
+              'int':{native:true,func:function(args){return {type:'string',value:args[0]-args[1]}}}
+              ,'string':{native:true,func:function(args){return {type:'string',value:args[0]-args[1]}}}
+            }
+          }
+        }
+      },
+      {
+        "==":{
+          type:2,
+          'native':true,
+          func:this.operateFunction,
+          'fs':{
+            '[consider]':{
+              null:{native:true,func:function(){return {type:'int',value:0}}}
+            }
+            ,'[others]':{
+              '[others]':{native:true,func:function(args){return {type:'boolean',value:args[0]==args[1]}}}
+            }
+            ,'int':{
+               'int':{native:true,func:function(args){return {type:'boolean',value:args[0]==args[1]}}}
+              ,'float':{native:true,func:function(args){return {type:'boolean',value:args[0]==args[1]}}}
+            }
+            ,'float':{
+              'int':{native:true,func:function(args){return {type:'boolean',value:args[0]==args[1]}}}
+              ,'float':{native:true,func:function(args){return {type:'boolean',value:args[0]==args[1]}}}
+            }
+            
+          }
+        }
+        ,"<":{
+          type:2,
+          'native':true,
+          func:this.operateFunction,
+          'fs':{
+            '[consider]':{
+              null:{native:true,func:function(){return {type:'int',value:0}}}
+            }
+            ,'[others]':{
+              '[others]':{native:true,func:function(){}}
+            }
+            ,'int':{
+               'int':{native:true,func:function(args){return {type:'boolean',value:args[0]<args[1]}}}
+              ,'float':{native:true,func:function(args){return {type:'boolean',value:args[0]<args[1]}}}
+            }
+            ,'float':{
+              'int':{native:true,func:function(args){return {type:'boolean',value:args[0]<args[1]}}}
+              ,'float':{native:true,func:function(args){return {type:'boolean',value:args[0]<args[1]}}}
+            }
+          }
+        }
+        ,">":{
+          type:2,
+          'native':true,
+          func:this.operateFunction,
+          'fs':{
+            '[consider]':{
+              null:{native:true,func:function(){return {type:'int',value:0}}}
+            }
+            ,'[others]':{
+              '[others]':{native:true,func:function(){}}
+            }
+            ,'int':{
+               'int':{native:true,func:function(args){return {type:'boolean',value:args[0]>args[1]}}}
+              ,'float':{native:true,func:function(args){return {type:'boolean',value:args[0]>args[1]}}}
+            }
+            ,'float':{
+              'int':{native:true,func:function(args){return {type:'boolean',value:args[0]>args[1]}}}
+              ,'float':{native:true,func:function(args){return {type:'boolean',value:args[0]>args[1]}}}
+            }
+          }
+        }
+      },
+      {
+        "||":{
+          type:2,
+          'native':true,
+          func:function(args,_this){
+            return _this.isTrue(args[0])?args[0]:args[1];
+          }
+        }
+        ,"&&":{
+          type:2,
+          'native':true,
+          func:function(args,_this){
+            return _this.isTrue(args[0])?args[1]:args[0];
+          }
+        }
+      }
+    ]
+  }
+    
+    
+    
+    
+    
     ,vars:
       {
          '!null':{type:'null'}
